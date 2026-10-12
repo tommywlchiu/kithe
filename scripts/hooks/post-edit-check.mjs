@@ -1,12 +1,15 @@
 // Claude Code PostToolUse hook: format the touched file, typecheck its workspace, lint it.
 // Exit code 2 sends stderr back to Claude so it fixes the problem in the same turn.
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root =
-  process.env.CLAUDE_PROJECT_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+// realpathSync.native restores the canonical drive-letter casing on Windows; Claude Code can
+// hand hooks a lowercase drive (c:\...), which makes Node treat one file as two modules.
+const root = realpathSync.native(
+  process.env.CLAUDE_PROJECT_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), '..', '..'),
+);
 
 const CODE = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs']);
 const DATA = new Set(['.json', '.yml', '.yaml']);
@@ -46,14 +49,15 @@ const payload = readPayload();
 const target = payload?.tool_input?.file_path ?? payload?.tool_input?.path ?? null;
 if (!target) process.exit(0);
 
-const file = resolve(root, target);
+const requested = resolve(root, target);
+if (!existsSync(requested)) process.exit(0);
+const file = realpathSync.native(requested);
 const rel = relative(root, file);
 const ext = extname(file);
 if (
   rel.startsWith('..') ||
   rel.split(sep).includes('node_modules') ||
-  (!CODE.has(ext) && !DATA.has(ext)) ||
-  !existsSync(file)
+  (!CODE.has(ext) && !DATA.has(ext))
 ) {
   process.exit(0);
 }
@@ -87,7 +91,7 @@ if (CODE.has(ext)) {
 
 if (failures.length > 0) {
   process.stderr.write(
-    `post-edit-check failed for ${rel} (${Date.now() - started} ms)\n\n${failures.join('\n\n')}\n`,
+    `post-edit-check failed for ${rel} (${Date.now() - started} ms, node ${process.version} at ${process.execPath}, cwd ${root})\n\n${failures.join('\n\n')}\n`,
   );
   process.exit(2);
 }

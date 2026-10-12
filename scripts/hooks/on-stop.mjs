@@ -3,12 +3,23 @@
 // working on the failure; `stop_hook_active` guards against looping on the same failure.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root =
-  process.env.CLAUDE_PROJECT_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+// realpathSync.native restores the canonical drive-letter casing on Windows. Claude Code can
+// hand hooks a lowercase drive (c:\...), and Node then loads vitest's runner twice as two
+// module instances, which fails every suite with "Cannot read properties of undefined".
+const root = realpathSync.native(
+  process.env.CLAUDE_PROJECT_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), '..', '..'),
+);
 const stamp = join(root, '.cache', 'on-stop.hash');
 const vitest = join(root, 'node_modules', 'vitest', 'vitest.mjs');
 
@@ -71,5 +82,7 @@ if (tests.status === 0) {
 }
 
 const output = `${tests.stdout ?? ''}${tests.stderr ?? ''}`;
-process.stderr.write(`tests failed on stop:\n${output.slice(-6000)}\n`);
+process.stderr.write(
+  `tests failed on stop (node ${process.version} at ${process.execPath}, cwd ${root}):\n${output.slice(-6000)}\n`,
+);
 process.exit(2);
