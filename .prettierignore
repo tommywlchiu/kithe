@@ -1,0 +1,11 @@
+node_modules
+dist
+build
+coverage
+.expo
+.cache
+ios
+android
+*.tsbuildinfo
+package-lock.json
+*.md

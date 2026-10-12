@@ -1,0 +1,33 @@
+{
+  "name": "kithe",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A cozy dog-raising game where real-life movement is the only way to care for your pup.",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "scripts"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "sim": "npm run sim --workspace @kithe/scripts",
+    "mobile": "npm run start --workspace @kithe/mobile",
+    "android": "npm run android --workspace @kithe/mobile"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.2",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.3"
+  }
+}
