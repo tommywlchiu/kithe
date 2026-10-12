@@ -9,3 +9,4 @@ android
 *.tsbuildinfo
 package-lock.json
 *.md
+apps/*/assets
