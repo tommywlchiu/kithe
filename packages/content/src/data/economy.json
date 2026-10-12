@@ -1,0 +1,38 @@
+{
+  "version": "0.1.0",
+  "earnings": {
+    "atGoal": 100,
+    "dailyCap": 125,
+    "starterKit": 100
+  },
+  "goal": {
+    "minSteps": 2000,
+    "maxSteps": 10000,
+    "minExerciseMinutes": 15,
+    "maxExerciseMinutes": 60,
+    "firstDayMultiplier": 0.5,
+    "weeklyAdjustPct": 0.1,
+    "raiseAfterDaysHit": 5,
+    "lowerAtOrBelowDaysHit": 1
+  },
+  "needs": {
+    "floor": 25,
+    "decayPerDay": {
+      "fullness": 50,
+      "cleanliness": 20,
+      "playfulness": 35
+    },
+    "mood": {
+      "thrivingAt": 70,
+      "contentAt": 40
+    }
+  },
+  "care": {
+    "meal": { "name": "Meal", "pricePawprints": 15 },
+    "treat": { "name": "Treat", "pricePawprints": 5, "perDayLimit": 3 },
+    "brushing": { "name": "Brushing", "pricePawprints": 10 },
+    "trainingSession": { "name": "Training session", "pricePawprints": 60 },
+    "vetVisit": { "name": "Vet visit", "pricePawprints": 40 }
+  },
+  "cosmetics": {}
+}
