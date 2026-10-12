@@ -1,0 +1,15 @@
+{
+  "name": "@kithe/scripts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Simulations, tooling, and Claude Code hooks for Kithe.",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "sim": "tsx economy-sim.ts"
+  },
+  "dependencies": {
+    "@kithe/content": "*",
+    "@kithe/core": "*"
+  }
+}
