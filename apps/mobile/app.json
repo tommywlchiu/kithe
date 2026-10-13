@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "kithe",
-    "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.kithe.app",
       "supportsTablet": false,
