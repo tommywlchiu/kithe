@@ -22,6 +22,12 @@ export type MovementAccess = {
 export interface MovementSource {
   readonly platform: 'healthkit' | 'health-connect';
   availability(): Promise<MovementAvailability>;
+  /**
+   * Current grants without prompting. A revoked permission otherwise reads as a zero-movement
+   * day, so the app checks this to show "reconnect" instead of "you didn't walk".
+   * `null` means the platform cannot tell (HealthKit hides read grants).
+   */
+  getAccess(): Promise<MovementAccess | null>;
   requestAccess(): Promise<MovementAccess>;
   readDays(dates: readonly IsoDate[]): Promise<DayMovement[]>;
 }

@@ -57,6 +57,10 @@ export const movementSource: MovementSource = {
   },
 
   // HealthKit never reveals whether read access was granted; a denied type just reads as 0.
+  async getAccess() {
+    return null;
+  },
+
   async requestAccess() {
     await requestAuthorization({ toRead: [STEPS, EXERCISE, PUSHES] });
     return { steps: true, exercise: true, wheelchairPushes: true };

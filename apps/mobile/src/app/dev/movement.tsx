@@ -30,6 +30,10 @@ export default function MovementSpikeScreen() {
       ?.availability()
       .then(setAvailability)
       .catch((error: unknown) => setAvailability(`error: ${String(error)}`));
+    movementSource
+      ?.getAccess()
+      .then(setAccess)
+      .catch(() => setAccess(null));
   }, []);
 
   if (!__DEV__) return <Redirect href="/" />;

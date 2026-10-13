@@ -119,6 +119,11 @@ export const movementSource: MovementSource = {
     return 'not-installed';
   },
 
+  async getAccess() {
+    await ensureInitialized();
+    return toAccess(await getGrantedPermissions());
+  },
+
   async requestAccess() {
     await ensureInitialized();
     return toAccess(await requestPermission([...READS]));

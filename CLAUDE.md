@@ -71,4 +71,6 @@ A cozy dog-raising game for iPhone and Android where real-life movement is the o
 - Put health data, real names, or precise activity timestamps in logs, analytics, or AI prompts.
 - Add app dependencies with plain `npm install`; use `npx expo install` so SDK-compatible versions are chosen.
 - Edit `ios/` or `android/` by hand; they are generated from `app.json` and config plugins.
+- Treat a zero-movement read as "didn't move" without checking `movementSource.getAccess()` first; a revoked permission also reads as zero (see `docs/spikes/t07-health-data.md`).
+- Call `adb` from Git Bash without `MSYS_NO_PATHCONV=1`; Git Bash rewrites device paths like `/sdcard/...` into Windows paths.
 - Run `expo start` or `expo run:*` with `CI` set: Metro then disables its file watcher ("running in CI mode, reloads are disabled"), so Fast Refresh and even manual reloads serve stale code. Expo CLI already goes non-interactive without a TTY; no flag is needed.

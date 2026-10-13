@@ -14,6 +14,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="diary" options={{ headerShown: true, title: 'Diary' }} />
         <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
+        <Stack.Screen name="dev/movement" options={{ headerShown: true, title: 'Health spike' }} />
       </Stack>
     </>
   );
