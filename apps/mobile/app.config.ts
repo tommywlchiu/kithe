@@ -1,0 +1,78 @@
+import type { ConfigContext, ExpoConfig } from 'expo/config';
+
+// Only development builds may write health data, so the emulator can be seeded with test
+// steps. Store builds read only, which keeps the Play health declaration minimal.
+// EAS profiles set APP_VARIANT explicitly; local builds default to development.
+const variant = process.env.APP_VARIANT ?? (process.env.EAS_BUILD ? 'production' : 'development');
+const isDevelopmentVariant = variant === 'development';
+
+const HEALTH_CONNECT_READ = [
+  'android.permission.health.READ_STEPS',
+  'android.permission.health.READ_EXERCISE',
+  'android.permission.health.READ_WHEELCHAIR_PUSHES',
+];
+const HEALTH_CONNECT_DEV_WRITE = ['android.permission.health.WRITE_STEPS'];
+
+export default ({ config }: ConfigContext): ExpoConfig => ({
+  ...config,
+  name: 'Kithe',
+  slug: 'kithe',
+  version: '0.1.0',
+  orientation: 'portrait',
+  icon: './assets/images/icon.png',
+  scheme: 'kithe',
+  ios: {
+    bundleIdentifier: 'com.kithe.app',
+    supportsTablet: false,
+    icon: './assets/expo.icon',
+  },
+  android: {
+    package: 'com.kithe.app',
+    adaptiveIcon: {
+      backgroundColor: '#F6F1E7',
+      foregroundImage: './assets/images/android-icon-foreground.png',
+      backgroundImage: './assets/images/android-icon-background.png',
+      monochromeImage: './assets/images/android-icon-monochrome.png',
+    },
+    predictiveBackGestureEnabled: false,
+    permissions: [
+      ...HEALTH_CONNECT_READ,
+      ...(isDevelopmentVariant ? HEALTH_CONNECT_DEV_WRITE : []),
+    ],
+  },
+  plugins: [
+    'expo-router',
+    [
+      'expo-splash-screen',
+      {
+        backgroundColor: '#F6F1E7',
+        image: './assets/images/splash-icon.png',
+        imageWidth: 76,
+      },
+    ],
+    'react-native-health-connect',
+    [
+      '@kingstinct/react-native-healthkit',
+      {
+        NSHealthShareUsageDescription:
+          'Your pup counts your steps, exercise minutes, and wheelchair pushes to earn Pawprints. Your health data stays on your phone.',
+        NSHealthUpdateUsageDescription: false,
+        background: false,
+      },
+    ],
+    [
+      'expo-build-properties',
+      {
+        android: {
+          minSdkVersion: 26,
+          compileSdkVersion: 36,
+          targetSdkVersion: 36,
+        },
+      },
+    ],
+  ],
+  experiments: {
+    typedRoutes: true,
+    reactCompiler: true,
+  },
+});
