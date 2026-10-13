@@ -9,7 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/hooks/post-edit-check.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/post-edit-check.mjs\"",
             "timeout": 60
           }
         ]
@@ -20,7 +20,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/hooks/on-stop.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/on-stop.mjs\"",
             "timeout": 180
           }
         ]

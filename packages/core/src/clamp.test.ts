@@ -24,6 +24,15 @@ describe('clamp', () => {
     expect(() => clamp(Number.POSITIVE_INFINITY, 0, 1)).toThrow(RangeError);
   });
 
+  it('rejects NaN bounds instead of returning NaN', () => {
+    expect(() => clamp(1, Number.NaN, 5)).toThrow(RangeError);
+    expect(() => clamp(1, 0, Number.NaN)).toThrow(RangeError);
+  });
+
+  it('allows an open-ended bound', () => {
+    expect(clamp(50, 0, Number.POSITIVE_INFINITY)).toBe(50);
+  });
+
   it('rejects an inverted range', () => {
     expect(() => clamp(1, 5, 0)).toThrow(RangeError);
   });

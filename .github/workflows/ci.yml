@@ -21,5 +21,5 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: npm run sim
-      - run: npx expo-doctor
+      - run: npx expo-doctor@1.20.4
         working-directory: apps/mobile

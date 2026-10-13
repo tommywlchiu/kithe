@@ -1,18 +1,33 @@
 // Claude Code PostToolUse hook: format the touched file, typecheck its workspace, lint it.
-// Exit code 2 sends stderr back to Claude so it fixes the problem in the same turn.
+// Exit code 2 sends stderr back to Claude so it fixes the problem in the same turn;
+// stderr on exit 0 is never shown, so every message Claude must see exits 2.
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
-import { dirname, extname, join, relative, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { existsSync, realpathSync } from 'node:fs';
+import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
-// realpathSync.native restores the canonical drive-letter casing on Windows; Claude Code can
-// hand hooks a lowercase drive (c:\...), which makes Node treat one file as two modules.
-const root = realpathSync.native(
-  process.env.CLAUDE_PROJECT_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), '..', '..'),
-);
+import { projectRoot, readPayload } from './project-root.mjs';
 
-const CODE = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs']);
+const CODE = new Set(['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs']);
 const DATA = new Set(['.json', '.yml', '.yaml']);
+
+const payload = readPayload();
+const target = payload?.tool_input?.file_path ?? payload?.tool_input?.path ?? null;
+if (!target) process.exit(0);
+
+const root = projectRoot(payload);
+const requested = resolve(root, target);
+if (!existsSync(requested)) process.exit(0);
+const file = realpathSync.native(requested);
+const rel = relative(root, file);
+const ext = extname(file);
+if (
+  isAbsolute(rel) ||
+  rel.startsWith('..') ||
+  rel.split(sep).includes('node_modules') ||
+  (!CODE.has(ext) && !DATA.has(ext))
+) {
+  process.exit(0);
+}
 
 const tool = (...segments) => join(root, 'node_modules', ...segments);
 const TOOLS = {
@@ -20,17 +35,16 @@ const TOOLS = {
   tsc: tool('typescript', 'bin', 'tsc'),
   eslint: tool('eslint', 'bin', 'eslint.js'),
 };
-
-function readPayload() {
-  try {
-    return JSON.parse(readFileSync(0, 'utf8'));
-  } catch {
-    return null;
-  }
+const missing = Object.entries(TOOLS).filter(([, path]) => !existsSync(path));
+if (missing.length > 0) {
+  process.stderr.write(
+    `post-edit-check: ${missing.map(([name]) => name).join(', ')} not installed in ${root}. Run npm ci there; edits in this checkout are unchecked until then.\n`,
+  );
+  process.exit(2);
 }
 
-function owningWorkspace(file) {
-  let dir = dirname(file);
+function owningWorkspace(path) {
+  let dir = dirname(path);
   while (dir.startsWith(root) && dir !== root) {
     if (existsSync(join(dir, 'package.json')) && existsSync(join(dir, 'tsconfig.json'))) {
       return dir;
@@ -41,32 +55,12 @@ function owningWorkspace(file) {
 }
 
 function run(script, args, cwd) {
-  const result = spawnSync(process.execPath, [script, ...args], { cwd, encoding: 'utf8' });
+  const result = spawnSync(process.execPath, [script, ...args], {
+    cwd,
+    encoding: 'utf8',
+    maxBuffer: 16 * 1024 * 1024,
+  });
   return { ok: result.status === 0, out: `${result.stdout ?? ''}${result.stderr ?? ''}`.trim() };
-}
-
-const payload = readPayload();
-const target = payload?.tool_input?.file_path ?? payload?.tool_input?.path ?? null;
-if (!target) process.exit(0);
-
-const requested = resolve(root, target);
-if (!existsSync(requested)) process.exit(0);
-const file = realpathSync.native(requested);
-const rel = relative(root, file);
-const ext = extname(file);
-if (
-  rel.startsWith('..') ||
-  rel.split(sep).includes('node_modules') ||
-  (!CODE.has(ext) && !DATA.has(ext))
-) {
-  process.exit(0);
-}
-
-for (const [name, path] of Object.entries(TOOLS)) {
-  if (!existsSync(path)) {
-    process.stderr.write(`post-edit-check: ${name} not installed, run npm ci\n`);
-    process.exit(0);
-  }
 }
 
 const started = Date.now();
@@ -91,7 +85,7 @@ if (CODE.has(ext)) {
 
 if (failures.length > 0) {
   process.stderr.write(
-    `post-edit-check failed for ${rel} (${Date.now() - started} ms, node ${process.version} at ${process.execPath}, cwd ${root})\n\n${failures.join('\n\n')}\n`,
+    `post-edit-check failed for ${rel} (${Date.now() - started} ms)\n\n${failures.join('\n\n')}\n`,
   );
   process.exit(2);
 }

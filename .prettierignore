@@ -4,8 +4,8 @@ build
 coverage
 .expo
 .cache
-ios
-android
+apps/*/ios
+apps/*/android
 *.tsbuildinfo
 package-lock.json
 *.md

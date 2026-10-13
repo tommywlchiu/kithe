@@ -1,88 +1,109 @@
-// Claude Code Stop hook: run the test suite, but only when the working tree changed since
-// the last green run, so conversational turns cost nothing. Exit code 2 keeps Claude
-// working on the failure; `stop_hook_active` guards against looping on the same failure.
+// Claude Code Stop hook: typecheck every workspace and run the tests, skipping when the tree
+// is unchanged since the last green run. Exit 2 keeps Claude working on a failure. To avoid
+// looping, a failure Claude already saw (same tree, stop_hook_active) is let through; any
+// edit after it is verified again.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  realpathSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-// realpathSync.native restores the canonical drive-letter casing on Windows. Claude Code can
-// hand hooks a lowercase drive (c:\...), and Node then loads vitest's runner twice as two
-// module instances, which fails every suite with "Cannot read properties of undefined".
-const root = realpathSync.native(
-  process.env.CLAUDE_PROJECT_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), '..', '..'),
-);
-const stamp = join(root, '.cache', 'on-stop.hash');
+import { projectRoot, readPayload } from './project-root.mjs';
+
+const payload = readPayload();
+const continuing = Boolean(payload?.stop_hook_active);
+const root = projectRoot(payload);
+const cacheDir = join(root, '.cache');
+const greenStamp = join(cacheDir, 'on-stop.green');
+const failStamp = join(cacheDir, 'on-stop.fail');
+
 const vitest = join(root, 'node_modules', 'vitest', 'vitest.mjs');
-
-function readPayload() {
-  try {
-    return JSON.parse(readFileSync(0, 'utf8'));
-  } catch {
-    return null;
-  }
+const tsc = join(root, 'node_modules', 'typescript', 'bin', 'tsc');
+if (!existsSync(vitest) || !existsSync(tsc)) {
+  if (continuing) process.exit(0);
+  process.stderr.write(`on-stop: dependencies not installed in ${root}. Run npm ci there.\n`);
+  process.exit(2);
 }
 
-function git(args, maxBuffer = 1024 * 1024) {
-  const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer });
+function git(args) {
+  const result = spawnSync('git', args, {
+    cwd: root,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
   return result.status === 0 ? (result.stdout ?? '') : null;
 }
 
-const payload = readPayload();
-if (payload?.stop_hook_active) process.exit(0);
-if (!existsSync(vitest)) process.exit(0);
-
-const status = git(['status', '--porcelain', '--untracked-files=all']);
-const head = git(['rev-parse', 'HEAD']);
-if (status === null || head === null) process.exit(0);
-
-const diff = git(['diff', 'HEAD'], 64 * 1024 * 1024) ?? '';
-const untrackedStats = status
-  .split('\n')
-  .filter((line) => line.startsWith('?? '))
-  .map((line) => line.slice(3).trim())
-  .map((path) => {
-    try {
-      const s = statSync(join(root, path));
-      return `${path}:${s.size}:${s.mtimeMs}`;
-    } catch {
-      return path;
-    }
-  })
-  .join('\n');
-
-const key = createHash('sha1')
-  .update(head)
-  .update(status)
-  .update(diff)
-  .update(untrackedStats)
-  .digest('hex');
-
-let previous = '';
-try {
-  previous = readFileSync(stamp, 'utf8').trim();
-} catch {
-  previous = '';
+function treeKey() {
+  const head = git(['rev-parse', 'HEAD']);
+  const status = git(['status', '--porcelain', '-z', '--untracked-files=all']);
+  const diff = git(['diff', 'HEAD']);
+  if (head === null || status === null || diff === null) return null;
+  const untracked = status
+    .split('\0')
+    .filter((entry) => entry.startsWith('?? '))
+    .map((entry) => {
+      const path = entry.slice(3);
+      try {
+        const s = statSync(join(root, path));
+        return `${path}:${s.size}:${s.mtimeMs}`;
+      } catch {
+        return path;
+      }
+    })
+    .join('\n');
+  return createHash('sha1')
+    .update(head)
+    .update(status)
+    .update(diff)
+    .update(untracked)
+    .digest('hex');
 }
-if (previous === key) process.exit(0);
 
-const tests = spawnSync(process.execPath, [vitest, 'run'], { cwd: root, encoding: 'utf8' });
-if (tests.status === 0) {
-  mkdirSync(dirname(stamp), { recursive: true });
-  writeFileSync(stamp, key);
+const read = (path) => {
+  try {
+    return readFileSync(path, 'utf8').trim();
+  } catch {
+    return '';
+  }
+};
+const write = (path, value) => {
+  mkdirSync(cacheDir, { recursive: true });
+  writeFileSync(path, value);
+};
+
+const key = treeKey();
+if (key !== null && read(greenStamp) === key) process.exit(0);
+if (key !== null && continuing && read(failStamp) === key) process.exit(0);
+
+function run(script, args) {
+  const result = spawnSync(process.execPath, [script, ...args], {
+    cwd: root,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  return {
+    ok: result.status === 0,
+    out: `${result.stdout ?? ''}${result.stderr ?? ''}${result.error ? `\n${result.error.message}` : ''}`,
+  };
+}
+
+const failures = [];
+const typecheck = spawnSync('npm', ['run', '-s', 'typecheck'], {
+  cwd: root,
+  encoding: 'utf8',
+  shell: true,
+  maxBuffer: 64 * 1024 * 1024,
+});
+if (typecheck.status !== 0) {
+  failures.push(`typecheck:\n${`${typecheck.stdout ?? ''}${typecheck.stderr ?? ''}`.slice(-4000)}`);
+}
+const tests = run(vitest, ['run']);
+if (!tests.ok) failures.push(`tests:\n${tests.out.slice(-4000)}`);
+
+if (failures.length === 0) {
+  if (key !== null) write(greenStamp, key);
   process.exit(0);
 }
-
-const output = `${tests.stdout ?? ''}${tests.stderr ?? ''}`;
-process.stderr.write(
-  `tests failed on stop (node ${process.version} at ${process.execPath}, cwd ${root}):\n${output.slice(-6000)}\n`,
-);
+if (key !== null) write(failStamp, key);
+process.stderr.write(`checks failed on stop:\n\n${failures.join('\n\n')}\n`);
 process.exit(2);

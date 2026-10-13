@@ -44,6 +44,9 @@ export const economySchema = z.strictObject({
     })
     .refine((g) => g.maxSteps > g.minSteps && g.maxExerciseMinutes > g.minExerciseMinutes, {
       message: 'goal maxima must exceed minima',
+    })
+    .refine((g) => g.raiseAfterDaysHit > g.lowerAtOrBelowDaysHit, {
+      message: 'raiseAfterDaysHit must exceed lowerAtOrBelowDaysHit',
     }),
   needs: z
     .strictObject({
