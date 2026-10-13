@@ -22,12 +22,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: './assets/images/icon.png',
   scheme: 'kithe',
   ios: {
-    bundleIdentifier: 'com.kithe.app',
+    bundleIdentifier: 'com.tommywlchiu.kithe',
     supportsTablet: false,
     icon: './assets/expo.icon',
   },
   android: {
-    package: 'com.kithe.app',
+    package: 'com.tommywlchiu.kithe',
     adaptiveIcon: {
       backgroundColor: '#F6F1E7',
       foregroundImage: './assets/images/android-icon-foreground.png',
