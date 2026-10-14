@@ -1,3 +1,4 @@
+import { templateText } from './schema/diary';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -112,5 +113,12 @@ describe('items', () => {
       expect(toy.pricePawprints).toBeLessThanOrEqual(150);
       expect(toy.category === 'toy' && toy.wearDays).toBe(14);
     }
+  });
+});
+
+describe('template placeholders', () => {
+  it('rejects an unclosed placeholder', () => {
+    expect(() => templateText.parse('{name wrote something overnight.')).toThrow();
+    expect(templateText.parse('{name} wrote something overnight.')).toBeTruthy();
   });
 });

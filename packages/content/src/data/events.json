@@ -45,7 +45,7 @@
       "id": "stoleSock",
       "name": "Stole your sock",
       "trigger": {
-        "type": "randomWeekly",
+        "type": "randomDaily",
         "chance": 0.14
       },
       "negative": false,

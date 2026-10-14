@@ -21,6 +21,9 @@ export const templateText = z
   .min(1)
   .refine((t) => (t.match(/\{[^}]*\}/g) ?? []).every((p) => p === '{name}'), {
     message: 'only the {name} placeholder is allowed',
+  })
+  .refine((t) => !/[{}]/.test(t.replaceAll('{name}', '')), {
+    message: 'unclosed or stray brace; the only placeholder is {name}',
   });
 
 export const diaryLineSchema = z.strictObject({

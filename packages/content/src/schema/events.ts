@@ -6,7 +6,7 @@ export const eventTriggerSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('onDay'), day: z.number().int().positive() }),
   z.strictObject({ type: z.literal('afterGoalBeat') }),
   // `chance` is the probability the event fires on any one eligible day; 0.14 is about weekly.
-  z.strictObject({ type: z.literal('randomWeekly'), chance: z.number().gt(0).max(1) }),
+  z.strictObject({ type: z.literal('randomDaily'), chance: z.number().gt(0).max(1) }),
   // Fires when treats in one day exceed economy.care.treat.perDayLimit.
   z.strictObject({ type: z.literal('treatsOverLimit') }),
 ]);
@@ -33,8 +33,9 @@ const base = {
 };
 
 // "Negative" means the event counts toward the one-negative-event-per-7-days rule and is
-// skipped in Rest Mode. Teething and upset tummy are mild discomforts; the vet checkup is a
-// chore the pup dislikes. Zoomies and the stolen sock are pure fun. Negative events always
+// skipped in Rest Mode. Teething and upset tummy are mild discomforts. The first vet checkup is a
+// routine milestone (it earns the health booklet), so it is not negative and never blocks
+// teething. Zoomies and the stolen sock are pure fun. Negative events always
 // resolve on their own (design doc: within 48 hours even if ignored).
 export const lifeEventSchema = z.discriminatedUnion('negative', [
   z.strictObject({

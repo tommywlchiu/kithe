@@ -58,10 +58,9 @@ describe('invariant 1: care can never be bought', () => {
     expect(() => itemsSchema.parse(tampered)).toThrow();
   });
 
-  it('keeps the training session price identical in economy and the shop', () => {
-    expect(items.items.trainingSession?.pricePawprints).toBe(
-      economy.care.trainingSession?.pricePawprints,
-    );
+  it('prices each care action in exactly one place', () => {
+    const shop = new Set(Object.keys(items.items));
+    for (const id of Object.keys(economy.care)) expect(shop.has(id), id).toBe(false);
   });
 
   it('rejects a cosmetic that gains a Pawprint price', () => {
@@ -130,10 +129,11 @@ describe('economy data', () => {
     });
   });
 
-  it('has a care effect for every priced need-restoring action', () => {
-    for (const id of ['meal', 'treat', 'brushing']) {
+  it('has a care effect for every priced need-restoring action, plus free play', () => {
+    for (const id of ['meal', 'treat', 'brushing'] as const) {
       expect(economy.care[id], id).toBeDefined();
       expect(economy.careEffects[id], id).toBeDefined();
     }
+    expect(economy.careEffects.play.playfulness).toBeGreaterThan(0);
   });
 });

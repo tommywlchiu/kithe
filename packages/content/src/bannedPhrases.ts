@@ -13,7 +13,13 @@ export const compileBannedPhrases = (phrases: readonly string[]): RegExp[] =>
       ),
   );
 
+const compiled = new WeakMap<readonly string[], RegExp[]>();
+
 export const findBannedPhrases = (text: string, phrases: readonly string[]): string[] => {
-  const patterns = compileBannedPhrases(phrases);
+  let patterns = compiled.get(phrases);
+  if (!patterns) {
+    patterns = compileBannedPhrases(phrases);
+    compiled.set(phrases, patterns);
+  }
   return phrases.filter((_, i) => patterns[i]!.test(text));
 };

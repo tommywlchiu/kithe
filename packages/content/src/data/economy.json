@@ -29,27 +29,55 @@
     }
   },
   "care": {
-    "meal": { "name": "Meal", "pricePawprints": 15 },
-    "treat": { "name": "Treat", "pricePawprints": 5, "perDayLimit": 3 },
-    "brushing": { "name": "Brushing", "pricePawprints": 10 },
-    "trainingSession": { "name": "Training session", "pricePawprints": 60 },
-    "vetVisit": { "name": "Vet visit", "pricePawprints": 40 }
+    "meal": {
+      "name": "Meal",
+      "pricePawprints": 15
+    },
+    "treat": {
+      "name": "Treat",
+      "pricePawprints": 5,
+      "perDayLimit": 3
+    },
+    "brushing": {
+      "name": "Brushing",
+      "pricePawprints": 10
+    },
+    "vetVisit": {
+      "name": "Vet visit",
+      "pricePawprints": 40
+    }
   },
   "careEffects": {
-    "meal": { "fullness": 25 },
-    "treat": { "fullness": 5 },
-    "brushing": { "cleanliness": 40 },
-    "play": { "playfulness": 35 }
+    "meal": {
+      "fullness": 25
+    },
+    "treat": {
+      "fullness": 5
+    },
+    "brushing": {
+      "cleanliness": 40
+    },
+    "play": {
+      "playfulness": 35
+    }
   },
   "bondPerCareAction": 2,
   "training": {
     "tricks": {
-      "sit": { "sessionsToLearn": 5 }
+      "sit": {
+        "sessionsToLearn": 5
+      }
     }
   },
   "growth": {
-    "adolescent": { "days": 14, "bond": 20 },
-    "adult": { "days": 42, "bond": 60 }
+    "adolescent": {
+      "days": 14,
+      "bond": 20
+    },
+    "adult": {
+      "days": 42,
+      "bond": 60
+    }
   },
   "cosmetics": {
     "foundingPupCollar": {

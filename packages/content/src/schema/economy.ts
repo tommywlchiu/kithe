@@ -96,8 +96,13 @@ export const economySchema = z.strictObject({
       message: 'mood thresholds must be ordered thriving > content > floor',
     }),
   care: z.record(z.string(), careItemSchema),
-  // Keyed by care action id: the care keys plus `play`, which is free with a toy.
-  careEffects: z.record(z.string(), careEffectSchema),
+  // Each action raises exactly one need; core applies it to that need, so the shape is fixed.
+  careEffects: z.strictObject({
+    meal: z.strictObject({ fullness: needLevel }),
+    treat: z.strictObject({ fullness: needLevel }),
+    brushing: z.strictObject({ cleanliness: needLevel }),
+    play: z.strictObject({ playfulness: needLevel }),
+  }),
   bondPerCareAction: positiveInt,
   training: z.strictObject({
     tricks: z.record(z.string(), z.strictObject({ sessionsToLearn: positiveInt })),
