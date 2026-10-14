@@ -52,7 +52,7 @@ A cozy dog-raising game for iPhone and Android where real-life movement is the o
 2. The pet never dies, starves, or gets sick from neglect. There is no death state in the types. Needs never drop below the safety floor (25).
 3. Raw health data never leaves the device. The server, analytics, logs, and the AI receive goal progress and coarse buckets only; never step counts, exercise minutes, heart rate, or health samples.
 4. No guilt mechanics: no streak resets, no countdown timers, no "hungry / sad / misses you" notifications, no purchase prompts when the pet is mopey or sick or before day 7. Notification and diary copy passes the banned-phrase test.
-5. The app never shows calories, weight, or body measurements. AI and template copy never contain body, diet, or medical talk.
+5. The app never shows calories, weight, or body measurements. AI and template copy never contain body, diet, or medical talk. This protects the player: the pup's own realistic dog life (teething, a mild upset tummy, a vet checkup) is a design feature, described gently and never as suffering.
 6. No ads. No randomized paid items.
 7. Growth requires both calendar time and bond; nothing purchasable shortens it.
 8. Game content is data (schema-validated files), not engine code.

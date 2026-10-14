@@ -15,6 +15,8 @@ export type {
   MovementGoal,
   StartingGoalInput,
 } from './earnings';
+export { growthStage, pickTemplate, scheduleEvents } from './life';
+export type { DayFacts, DiaryLine, EventDef, EventHistory, GrowthConfig, Stage } from './life';
 export { combineSourceRecords, lastNDates } from './movement';
 export type {
   DayMovement,
@@ -28,5 +30,7 @@ export type {
 } from './movement';
 export { decayNeeds, mood, raiseNeed } from './needs';
 export type { Mood, Needs, NeedsConfig } from './needs';
+export { addDays, daysBetween, localDate, rolloverDay, seededRandom } from './time';
+export type { Clock } from './time';
 export { balance, credit, debit } from './wallet';
 export type { CreditReason, DebitReason, LedgerEntry } from './wallet';

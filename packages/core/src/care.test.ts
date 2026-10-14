@@ -139,7 +139,7 @@ describe('applyCare', () => {
       triggered.push(...out.triggered);
       s = out.state;
     }
-    expect(triggered).toEqual(['upsetTummy']);
+    expect(triggered).toEqual(['treatsOverLimit']);
     expect(s.treatsToday).toBe(5);
   });
 

@@ -34,7 +34,7 @@ export type CareState = {
 };
 
 export type CareOutcome =
-  | { ok: true; state: CareState; triggered: readonly 'upsetTummy'[] }
+  | { ok: true; state: CareState; triggered: readonly 'treatsOverLimit'[] }
   | {
       ok: false;
       reason: 'notEnoughPawprints' | 'unknownToy' | 'noUsableToy' | 'trickAlreadyLearned';
@@ -91,7 +91,7 @@ export function applyCare(state: CareState, action: CareAction, config: CareConf
   const floor = config.needs.floor;
   const needs = { ...state.needs };
   let { treatsToday, toys, trickProgress } = state;
-  const triggered: 'upsetTummy'[] = [];
+  const triggered: 'treatsOverLimit'[] = [];
 
   switch (action.type) {
     case 'meal':
@@ -100,7 +100,7 @@ export function applyCare(state: CareState, action: CareAction, config: CareConf
     case 'treat':
       needs.fullness = raiseNeed(needs.fullness, config.effects.treat, floor);
       treatsToday += 1;
-      if (treatsToday === config.treatDailyLimit + 1) triggered.push('upsetTummy');
+      if (treatsToday === config.treatDailyLimit + 1) triggered.push('treatsOverLimit');
       break;
     case 'brushing':
       needs.cleanliness = raiseNeed(needs.cleanliness, config.effects.brushing, floor);
