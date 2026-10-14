@@ -1,4 +1,13 @@
-import { events as contentEvents, economy } from '@kithe/content';
+import {
+  careConfig,
+  earningsConfig,
+  economy,
+  eventDefs,
+  events as contentEvents,
+  growthConfig,
+  needsConfig,
+  starterKitPawprints,
+} from '@kithe/content';
 import {
   addDays,
   applyCare,
@@ -7,6 +16,8 @@ import {
   type CareState,
   credit,
   dailyEarnings,
+  type EventHistory,
+  eventRewardGain,
   daysBetween,
   decayNeeds,
   growthStage,
@@ -15,8 +26,6 @@ import {
   scheduleEvents,
   seededRandom,
 } from '@kithe/core';
-
-import { careConfig, earningsConfig, eventDefs, growthConfig, needsConfig } from './content-config';
 
 // 90 days of four player types (design doc, "Weekly balance by player type") through the real
 // rules and content. Exits non-zero when a balancing target fails, so CI guards every price
@@ -35,9 +44,9 @@ const TRICK = 'sit';
 const toyIds = Object.entries(careConfig.toys)
   .sort(([, a], [, b]) => a.price - b.price)
   .map(([id]) => id);
-const bondReward = new Map<string, number>(
-  contentEvents.events.map((e) => [e.id, e.reward?.bond ?? 0]),
-);
+const rewards = new Map(contentEvents.events.map((e) => [e.id as string, e.reward]));
+// The adoption state arrives with onboarding (T8); until then the sim adopts a well-fed pup.
+const ADOPTION_NEEDS = { fullness: 80, cleanliness: 80, playfulness: 80, energy: 100 };
 
 type Result = {
   player: PlayerName;
@@ -59,15 +68,14 @@ function simulate(player: PlayerName, seed: number): Result {
   const rng = seededRandom(seed);
   let state: CareState = {
     today: START,
-    needs: { fullness: 80, cleanliness: 80, playfulness: 80, energy: 100 },
+    needs: ADOPTION_NEEDS,
     bond: 0,
-    ledger: [credit(START, 100, { kind: 'starterKit' })],
+    ledger: [credit(START, starterKitPawprints, { kind: 'starterKit' })],
     treatsToday: 0,
     toys: [],
     trickProgress: {},
   };
-  const firedOnce: string[] = [];
-  let lastNegativeDate: string | undefined;
+  let eventHistory: EventHistory = { firedIds: [] };
   const r: Result = {
     player,
     finalBalance: 0,
@@ -129,7 +137,7 @@ function simulate(player: PlayerName, seed: number): Result {
     }
     if (
       r.trickLearnedDay === null &&
-      (state.trickProgress[TRICK] ?? 0) >= careConfig.sessionsPerTrick
+      (state.trickProgress[TRICK] ?? 0) >= careConfig.tricks[TRICK]!
     ) {
       r.trickLearnedDay = day;
     }
@@ -143,7 +151,7 @@ function simulate(player: PlayerName, seed: number): Result {
       state.needs.playfulness,
     );
 
-    const fired = scheduleEvents(
+    const scheduled = scheduleEvents(
       {
         date,
         dayNumber: day,
@@ -152,20 +160,25 @@ function simulate(player: PlayerName, seed: number): Result {
         treatsOverLimit: state.treatsToday > careConfig.treatDailyLimit,
       },
       eventDefs,
-      { firedIds: firedOnce, lastNegativeDate },
+      eventHistory,
       rng,
     );
-    for (const id of fired) {
-      const def = eventDefs.find((e) => e.id === id)!;
-      if (def.trigger.type === 'onDay') firedOnce.push(id);
-      if (def.negative) {
-        lastNegativeDate = date;
-        r.negativeDates.push(date);
-      }
-      if (today !== 'mopey') state = { ...state, bond: state.bond + (bondReward.get(id) ?? 0) };
+    eventHistory = scheduled.history;
+    for (const id of scheduled.fired) {
+      if (eventDefs.find((e) => e.id === id)!.negative) r.negativeDates.push(date);
+      const gain = eventRewardGain(rewards.get(id) ?? null, today);
+      state = {
+        ...state,
+        bond: state.bond + gain.bond,
+        trickProgress: {
+          ...state.trickProgress,
+          [TRICK]: (state.trickProgress[TRICK] ?? 0) + gain.trickProgress,
+        },
+      };
     }
 
-    const stage = growthStage(day, state.bond, growthConfig);
+    // Day 1 is adoption day, so day N means N - 1 full days together.
+    const stage = growthStage(day - 1, state.bond, growthConfig);
     if (stage !== 'puppy' && r.adolescentDay === null) r.adolescentDay = day;
     if (stage === 'adult' && r.adultDay === null) r.adultDay = day;
   }

@@ -42,6 +42,7 @@ A cozy dog-raising game for iPhone and Android where real-life movement is the o
 ## Conventions
 - Game rules live in `packages/core` as pure functions with test vectors; the app and the economy sim both call them. Never duplicate a rule in UI code.
 - Tunable numbers (prices, decay rates, caps, thresholds) live in `packages/content`, never as literals in code.
+- `packages/content/src/core-config.ts` is the only place content becomes core config (`careConfig`, `needsConfig`, ...). The app and the sim both import from it; core never imports content at runtime.
 - One adapter interface per native capability (MovementSource, Notifier, Storage); platform-specific code lives only in adapters.
 - Day boundaries use the player's home time zone, locked at adoption; a change applies from the next day; a backwards clock never re-credits a day.
 - Numbers stay quiet in the UI: needs show as pet behavior and icons first; exact values only on tap.

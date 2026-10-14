@@ -17,7 +17,8 @@ export type CareConfig = {
   effects: { meal: number; treat: number; brushing: number; play: number };
   bondPerAction: number;
   treatDailyLimit: number;
-  sessionsPerTrick: number;
+  /** Sessions needed to learn each trick, by trick id. */
+  tricks: Readonly<Record<string, number>>;
   toys: Readonly<Record<string, { price: number; wearDays: number }>>;
 };
 
@@ -37,7 +38,12 @@ export type CareOutcome =
   | { ok: true; state: CareState; triggered: readonly 'treatsOverLimit'[] }
   | {
       ok: false;
-      reason: 'notEnoughPawprints' | 'unknownToy' | 'noUsableToy' | 'trickAlreadyLearned';
+      reason:
+        | 'notEnoughPawprints'
+        | 'unknownToy'
+        | 'noUsableToy'
+        | 'unknownTrick'
+        | 'trickAlreadyLearned';
     };
 
 /** Own keys only, so ids like "toString" can never resolve to a built-in. */
@@ -56,10 +62,10 @@ function refusalFor(state: CareState, action: CareAction, config: CareConfig): R
       return state.toys.some((t) => t.toyId === action.toyId && t.wearDaysLeft > 0)
         ? null
         : 'noUsableToy';
-    case 'trainingSession':
-      return (state.trickProgress[action.trickId] ?? 0) >= config.sessionsPerTrick
-        ? 'trickAlreadyLearned'
-        : null;
+    case 'trainingSession': {
+      if (!Object.hasOwn(config.tricks, action.trickId)) return 'unknownTrick';
+      return trickLearned(state, action.trickId, config) ? 'trickAlreadyLearned' : null;
+    }
     default:
       return null;
   }
@@ -138,5 +144,6 @@ export function applyCare(state: CareState, action: CareAction, config: CareConf
 }
 
 export function trickLearned(state: CareState, trickId: string, config: CareConfig): boolean {
-  return (state.trickProgress[trickId] ?? 0) >= config.sessionsPerTrick;
+  const needed = Object.hasOwn(config.tricks, trickId) ? config.tricks[trickId]! : Infinity;
+  return (state.trickProgress[trickId] ?? 0) >= needed;
 }

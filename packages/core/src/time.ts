@@ -1,13 +1,30 @@
 import type { IsoDate } from './movement';
 
-/** Calendar date of an instant in a time zone, as YYYY-MM-DD. */
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+/** Whether this device's Intl data knows the zone; check before storing a home time zone. */
+export function isValidTimeZone(timeZone: string): boolean {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Calendar date of an instant in a time zone, as YYYY-MM-DD. Formatters are cached per zone. */
 export function localDate(ms: number, timeZone: string): IsoDate {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date(ms));
+  let format = formatters.get(timeZone);
+  if (!format) {
+    format = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    formatters.set(timeZone, format);
+  }
+  const parts = format.formatToParts(new Date(ms));
   const get = (type: string) => parts.find((p) => p.type === type)!.value;
   return `${get('year')}-${get('month')}-${get('day')}`;
 }
@@ -32,19 +49,29 @@ export type Clock = {
   pendingTimeZone?: string;
 };
 
+/** Matches the design doc's 7-day sync window. */
+export const MAX_CATCH_UP_DAYS = 7;
+
 /**
- * The days that ended since the last check, oldest first, in the home time zone. A clock
- * moved backwards yields nothing and never re-credits a day; a pending time zone change
- * applies only after today has been counted in the old zone, so travel cannot create or
- * erase a day.
+ * The days that ended since the last check, oldest first, in the home time zone. At most the
+ * last 7 are returned for day-by-day processing; `skippedDays` counts the older ones, which
+ * still count as days together but get no events or diary. A clock moved backwards yields
+ * nothing and never re-credits a day. A pending time zone change applies only after today
+ * has been counted in the old zone, so travel cannot create or erase a day. A device clock
+ * moved far forward still advances `lastDay`; server time replaces the device clock in
+ * Phase 2.
  */
-export function rolloverDay(clock: Clock, nowMs: number): { newDays: IsoDate[]; clock: Clock } {
+export function rolloverDay(
+  clock: Clock,
+  nowMs: number,
+): { newDays: IsoDate[]; skippedDays: number; clock: Clock } {
   const today = localDate(nowMs, clock.homeTimeZone);
   const gap = daysBetween(clock.lastDay, today);
-  if (gap <= 0) return { newDays: [], clock };
-  const newDays = Array.from({ length: gap }, (_, i) => addDays(clock.lastDay, i + 1));
+  if (gap <= 0) return { newDays: [], skippedDays: 0, clock };
+  const processed = Math.min(gap, MAX_CATCH_UP_DAYS);
+  const newDays = Array.from({ length: processed }, (_, i) => addDays(today, i - processed + 1));
   const next: Clock = { lastDay: today, homeTimeZone: clock.pendingTimeZone ?? clock.homeTimeZone };
-  return { newDays, clock: next };
+  return { newDays, skippedDays: gap - processed, clock: next };
 }
 
 /** Small deterministic PRNG (mulberry32), so events and diary picks replay from a seed. */

@@ -1,4 +1,5 @@
 import type { IsoDate } from './movement';
+import type { Mood } from './needs';
 import { daysBetween } from './time';
 
 export type Stage = 'puppy' | 'adolescent' | 'adult';
@@ -42,38 +43,49 @@ export type DayFacts = {
 };
 
 export type EventHistory = {
+  /** One-time (onDay) events that already happened. */
   firedIds: readonly string[];
   lastNegativeDate?: IsoDate;
+  /** The day the scheduler last ran and what fired then, so a second run that day is safe. */
+  lastRun?: { date: IsoDate; fired: readonly string[] };
 };
+
+/** Shape of an event's `reward` in @kithe/content. */
+export type EventReward = { bond?: number; trickProgress?: number } | null;
 
 const NEGATIVE_SPACING_DAYS = 7;
 
 /**
- * Events that start today. Rest Mode is a cozy nap, so nothing starts during it. At most one
- * negative event fires in any 7-day window; a blocked one-time event waits and fires once
- * the window clears. `rng` is seeded so a day replays the same way.
+ * Events that start today, plus the updated history to store. Rest Mode is a cozy nap, so
+ * nothing starts during it. At most one negative event fires in any 7-day window; a blocked
+ * one-time event waits and fires once the window clears. Running it again on the same day
+ * (for example after a 4th treat) only checks same-day triggers, never re-rolls the random
+ * ones and never repeats an event, so a seeded day replays the same way.
  */
 export function scheduleEvents(
   facts: DayFacts,
   events: readonly EventDef[],
   history: EventHistory,
   rng: () => number,
-): string[] {
-  if (facts.restMode) return [];
+): { fired: string[]; history: EventHistory } {
+  if (facts.restMode) return { fired: [], history };
+  const rerun = history.lastRun?.date === facts.date;
+  const firedToday = new Set(rerun ? history.lastRun!.fired : []);
   let lastNegative = history.lastNegativeDate;
   const fired: string[] = [];
   for (const event of events) {
+    if (firedToday.has(event.id)) continue;
     const trigger = event.trigger;
     let due = false;
     switch (trigger.type) {
       case 'onDay':
-        due = facts.dayNumber >= trigger.day && !history.firedIds.includes(event.id);
+        due = !rerun && facts.dayNumber >= trigger.day && !history.firedIds.includes(event.id);
         break;
       case 'afterGoalBeat':
-        due = facts.goalBeatYesterday;
+        due = !rerun && facts.goalBeatYesterday;
         break;
       case 'randomDaily':
-        due = rng() < trigger.chance;
+        due = !rerun && rng() < trigger.chance;
         break;
       case 'treatsOverLimit':
         due = facts.treatsOverLimit;
@@ -86,26 +98,63 @@ export function scheduleEvents(
     }
     fired.push(event.id);
   }
-  return fired;
+  const oneTime = new Set(events.filter((e) => e.trigger.type === 'onDay').map((e) => e.id));
+  return {
+    fired,
+    history: {
+      firedIds: [...history.firedIds, ...fired.filter((id) => oneTime.has(id))],
+      ...(lastNegative ? { lastNegativeDate: lastNegative } : {}),
+      lastRun: { date: facts.date, fired: [...firedToday, ...fired] },
+    },
+  };
+}
+
+/**
+ * What an event gives. Bond is withheld while the pup is mopey, the same as care (mopey pets
+ * earn no bond), and trick progress goes to the trick being learned. Rewards never include
+ * Pawprints or Stars.
+ */
+export function eventRewardGain(
+  reward: EventReward,
+  currentMood: Mood,
+): { bond: number; trickProgress: number } {
+  return {
+    bond: currentMood === 'mopey' ? 0 : (reward?.bond ?? 0),
+    trickProgress: reward?.trickProgress ?? 0,
+  };
 }
 
 export type DiaryLine = { id: string; text: string; tags: readonly string[] };
 
 /**
- * A diary line for today. Lines tagged with something that happened today are preferred, so
- * every entry mentions something concrete; the pup's traits break ties. The last 7 lines are
- * never repeated while any other choice exists.
+ * A diary line for today. A line tagged with something that happens on particular days
+ * (an event, a goal day, the first day) is only eligible when all of those things happened
+ * today, so the diary never mentions a sock that was not stolen. Among eligible lines, the
+ * ones about today's facts win and the pup's traits break ties. The last 7 lines are never
+ * repeated while any other choice exists. `traitTags` is the full trait vocabulary, which
+ * separates personality tags from day facts.
  */
 export function pickTemplate(
   lines: readonly DiaryLine[],
-  context: { dayTags: readonly string[]; traits: readonly string[]; petName: string },
+  context: {
+    dayTags: readonly string[];
+    traits: readonly string[];
+    traitTags: readonly string[];
+    petName: string;
+  },
   recentIds: readonly string[],
   rng: () => number,
 ): { id: string; text: string } {
   if (lines.length === 0) throw new RangeError('pickTemplate needs at least one line');
+  const isTrait = (t: string) => context.traitTags.includes(t);
+  const eligible = lines.filter((l) =>
+    l.tags.every((t) => isTrait(t) || context.dayTags.includes(t)),
+  );
+  const candidates = eligible.length > 0 ? eligible : lines.filter((l) => l.tags.every(isTrait));
+  if (candidates.length === 0) throw new RangeError('no diary line fits today');
   const recent = new Set(recentIds.slice(-7));
-  const fresh = lines.filter((l) => !recent.has(l.id));
-  const pool = fresh.length > 0 ? fresh : lines;
+  const fresh = candidates.filter((l) => !recent.has(l.id));
+  const pool = fresh.length > 0 ? fresh : candidates;
   const score = (l: DiaryLine) =>
     l.tags.filter((t) => context.dayTags.includes(t)).length * 10 +
     l.tags.filter((t) => context.traits.includes(t)).length;

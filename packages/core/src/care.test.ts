@@ -16,7 +16,7 @@ const CARE: CareConfig = {
   effects: { meal: 25, treat: 5, brushing: 40, play: 35 },
   bondPerAction: 2,
   treatDailyLimit: 3,
-  sessionsPerTrick: 5,
+  tricks: { sit: 5 },
   toys: { ball: { price: 40, wearDays: 14 } },
 };
 
@@ -204,6 +204,13 @@ describe('applyCare', () => {
     }
     expect(mood(s.needs, NEEDS)).toBe('content');
     expect(balance(s.ledger)).toBe(60);
+  });
+
+  it('refuses training for a trick that does not exist', () => {
+    expect(applyCare(state(), { type: 'trainingSession', trickId: 'backflip' }, CARE)).toEqual({
+      ok: false,
+      reason: 'unknownTrick',
+    });
   });
 
   it('never resolves built-in object keys as toys', () => {

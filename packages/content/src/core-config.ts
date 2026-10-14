@@ -1,6 +1,8 @@
-import { economy, events, items } from '@kithe/content';
+import { diary, economy, events, items } from './parsed';
+import { traitIds } from './schema/ids';
 import type {
   CareConfig,
+  DiaryLine,
   EarningsConfig,
   EventDef,
   GoalConfig,
@@ -8,8 +10,9 @@ import type {
   NeedsConfig,
 } from '@kithe/core';
 
-// The one place content data meets core rules. Core never imports content, so if a schema
-// and a rule drift apart, it fails to typecheck or throws here instead of misbehaving.
+// The one place content data becomes core rule config, shared by the app and the economy sim.
+// Core never imports content at runtime (only these types flow the other way), so if a schema
+// and a rule drift apart this file fails to typecheck or throws at load instead of misbehaving.
 
 function price(id: string): number {
   const fromCare = economy.care[id]?.pricePawprints;
@@ -17,12 +20,6 @@ function price(id: string): number {
   const value = fromCare ?? fromShop;
   if (value === undefined) throw new Error(`content has no price for "${id}"`);
   return value;
-}
-
-function sessionsToLearn(trickId: string): number {
-  const trick = economy.training.tricks[trickId];
-  if (!trick) throw new Error(`content has no trick "${trickId}"`);
-  return trick.sessionsToLearn;
 }
 
 export const earningsConfig: EarningsConfig = economy.earnings;
@@ -49,7 +46,9 @@ export const careConfig: CareConfig = {
   },
   bondPerAction: economy.bondPerCareAction,
   treatDailyLimit: treatLimit,
-  sessionsPerTrick: sessionsToLearn('sit'),
+  tricks: Object.fromEntries(
+    Object.entries(economy.training.tricks).map(([id, t]) => [id, t.sessionsToLearn]),
+  ),
   toys: Object.fromEntries(
     Object.entries(items.items).flatMap(([id, item]) =>
       item.category === 'toy'
@@ -60,3 +59,7 @@ export const careConfig: CareConfig = {
 };
 
 export const eventDefs: EventDef[] = events.events;
+
+export const starterKitPawprints: number = economy.earnings.starterKit;
+export const traitTags: readonly string[] = traitIds;
+export const diaryLines: readonly DiaryLine[] = diary.lines;
