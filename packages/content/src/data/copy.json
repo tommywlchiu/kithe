@@ -1,0 +1,20 @@
+{
+  "version": "0.1.0",
+  "notifications": {
+    "dayOne": { "id": "wroteOvernight", "text": "{name} wrote something overnight." },
+    "daily": [
+      { "id": "foundLeaf", "text": "{name} found a leaf they want to show you." },
+      { "id": "sunnySpot", "text": "{name} saved you the sunny spot." },
+      { "id": "newDiaryLine", "text": "{name} added a line to the diary." },
+      { "id": "squeakyBall", "text": "{name} has the squeaky ball ready for you." },
+      { "id": "windowWatch", "text": "{name} spotted something exciting from the window." },
+      { "id": "newFlop", "text": "{name} invented a new way to flop on the rug." },
+      { "id": "pickedToy", "text": "{name} picked out a toy for the two of you." },
+      { "id": "cozyBlanket", "text": "{name} made the blanket extra cozy." },
+      { "id": "rainWatch", "text": "{name} wants to watch the rain with you." },
+      { "id": "squirrelStory", "text": "{name} has a story about a squirrel." },
+      { "id": "sitPractice", "text": "{name} has been practicing sit. Want to see?" },
+      { "id": "tailWag", "text": "{name} wagged their tail just thinking about you." }
+    ]
+  }
+}

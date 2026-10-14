@@ -1,0 +1,48 @@
+{
+  "version": "0.1.0",
+  "events": [
+    {
+      "id": "firstVetCheckup",
+      "name": "First vet checkup",
+      "trigger": { "type": "onDay", "day": 5 },
+      "negative": true,
+      "response": "vetVisit",
+      "reward": { "bond": 3, "memory": "healthBooklet" },
+      "resolvesWithinHours": 48
+    },
+    {
+      "id": "teething",
+      "name": "Teething",
+      "trigger": { "type": "onDay", "day": 2 },
+      "negative": true,
+      "response": "chewToy",
+      "reward": { "trickProgress": 1 },
+      "resolvesWithinHours": 48
+    },
+    {
+      "id": "zoomies",
+      "name": "Zoomies",
+      "trigger": { "type": "afterGoalBeat" },
+      "negative": false,
+      "response": "play",
+      "reward": { "memory": "zoomiesPhoto" }
+    },
+    {
+      "id": "stoleSock",
+      "name": "Stole your sock",
+      "trigger": { "type": "randomWeekly", "chance": 0.14 },
+      "negative": false,
+      "response": "play",
+      "reward": { "bond": 5 }
+    },
+    {
+      "id": "upsetTummy",
+      "name": "Upset tummy",
+      "trigger": { "type": "treatsOverLimit" },
+      "negative": true,
+      "response": null,
+      "reward": null,
+      "resolvesWithinHours": 24
+    }
+  ]
+}

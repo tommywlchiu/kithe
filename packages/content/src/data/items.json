@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "items": {
+    "squeakyBall": {
+      "name": "Squeaky ball",
+      "category": "toy",
+      "pricePawprints": 40,
+      "wearDays": 14
+    },
+    "ropeTug": { "name": "Rope tug", "category": "toy", "pricePawprints": 90, "wearDays": 14 },
+    "plushDuck": { "name": "Plush duck", "category": "toy", "pricePawprints": 150, "wearDays": 14 },
+    "chewToy": { "name": "Chew toy", "category": "care", "pricePawprints": 20 },
+    "trainingSession": { "name": "Training session", "category": "training", "pricePawprints": 60 }
+  }
+}

@@ -1,0 +1,365 @@
+{
+  "version": "0.1.0",
+  "lines": [
+    {
+      "id": "d001",
+      "text": "My first night in the new room. The blanket smells like you now, and that is my favorite smell.",
+      "tags": ["firstDay", "cuddly"]
+    },
+    {
+      "id": "d002",
+      "text": "I sniffed every corner of the room today. The corner with the bowl is the best corner.",
+      "tags": ["firstDay", "curious", "foodie"]
+    },
+    {
+      "id": "d003",
+      "text": "You said my name about a hundred times today. {name}. I think it suits me.",
+      "tags": ["firstDay"]
+    },
+    {
+      "id": "d004",
+      "text": "I hid behind the toy basket for a while today, then I came out for the squeaky ball.",
+      "tags": ["firstDay", "shy"]
+    },
+    {
+      "id": "d005",
+      "text": "I carried the squeaky ball to you four times today. You threw it every time. Best game ever.",
+      "tags": ["playful"]
+    },
+    {
+      "id": "d006",
+      "text": "The rope tug and I had a serious match this afternoon. I won, mostly.",
+      "tags": ["playful"]
+    },
+    {
+      "id": "d007",
+      "text": "We walked past a park full of pigeons today. I bounced the whole way home.",
+      "tags": ["playful", "goalHit"]
+    },
+    {
+      "id": "d008",
+      "text": "I found a pinecone on our walk and played with it until it rolled under the couch.",
+      "tags": ["playful", "curious"]
+    },
+    {
+      "id": "d009",
+      "text": "I napped in the sunny spot by the window for most of the afternoon. Ten out of ten.",
+      "tags": ["lazy"]
+    },
+    {
+      "id": "d010",
+      "text": "Our walk was lovely, and the nap on the rug after it was even lovelier.",
+      "tags": ["lazy", "goalHit"]
+    },
+    {
+      "id": "d011",
+      "text": "Rainy day. I stayed curled up on the blanket and listened to the drops on the window.",
+      "tags": ["lazy", "cozyWeek"]
+    },
+    {
+      "id": "d012",
+      "text": "I tried to sit in training today, but lying down felt more like me. Tomorrow, sit.",
+      "tags": ["lazy", "trickProgress"]
+    },
+    {
+      "id": "d013",
+      "text": "There was a new smell by the lamppost on our walk. I need to investigate again tomorrow.",
+      "tags": ["curious", "goalHit"]
+    },
+    {
+      "id": "d014",
+      "text": "I watched a snail cross the path today. It took forever. I loved every second.",
+      "tags": ["curious"]
+    },
+    {
+      "id": "d015",
+      "text": "The diary shelf is very interesting. I sniffed it until you laughed.",
+      "tags": ["curious"]
+    },
+    {
+      "id": "d016",
+      "text": "The brush came out today and I sighed like the world was ending. Then I looked very shiny.",
+      "tags": ["dramatic"]
+    },
+    {
+      "id": "d017",
+      "text": "A leaf landed on my nose on our walk. I told the whole street about it.",
+      "tags": ["dramatic", "goalHit"]
+    },
+    {
+      "id": "d018",
+      "text": "I flopped onto my back in the hallway so you would rub my belly. It worked.",
+      "tags": ["dramatic", "cuddly"]
+    },
+    {
+      "id": "d019",
+      "text": "Dinner was taking too long, so I made my loudest little noise next to the bowl. Worth it.",
+      "tags": ["dramatic", "foodie"]
+    },
+    {
+      "id": "d020",
+      "text": "I fell asleep on your feet tonight. They are warm and they are mine.",
+      "tags": ["cuddly"]
+    },
+    {
+      "id": "d021",
+      "text": "We sat together by the window and watched the rain. The best kind of evening.",
+      "tags": ["cuddly", "cozyWeek"]
+    },
+    {
+      "id": "d022",
+      "text": "After the brushing I leaned on you for a long time. My fur felt so soft.",
+      "tags": ["cuddly"]
+    },
+    {
+      "id": "d023",
+      "text": "Dinner was in the bowl at exactly the right time. I licked the bowl clean to say thank you.",
+      "tags": ["foodie"]
+    },
+    {
+      "id": "d024",
+      "text": "I learned that the treat jar makes a special sound. I will be listening for it forever.",
+      "tags": ["foodie"]
+    },
+    {
+      "id": "d025",
+      "text": "Kibble crunch, then a walk, then more kibble crunch. A perfect day.",
+      "tags": ["foodie", "goalHit"]
+    },
+    {
+      "id": "d026",
+      "text": "I barked at a big umbrella on our walk today. It did not bark back. I win.",
+      "tags": ["brave", "goalHit"]
+    },
+    {
+      "id": "d027",
+      "text": "We crossed the little bridge by the pond and I did not look down once.",
+      "tags": ["brave"]
+    },
+    {
+      "id": "d028",
+      "text": "A bus rumbled past on our walk and I stood very tall. Then I wagged at it.",
+      "tags": ["brave"]
+    },
+    {
+      "id": "d029",
+      "text": "A friendly dog said hello on our walk. I said hello back from behind your legs.",
+      "tags": ["shy", "goalHit"]
+    },
+    {
+      "id": "d030",
+      "text": "I peeked out from the blanket when you came home. Then I came all the way out.",
+      "tags": ["shy"]
+    },
+    {
+      "id": "d031",
+      "text": "The new toy squeaked and surprised me. I watched it from across the room until it was my friend.",
+      "tags": ["shy", "playful"]
+    },
+    {
+      "id": "d032",
+      "text": "My teeth feel funny today. The chew toy helps, and so does your hand on my head.",
+      "tags": ["teething", "cuddly"]
+    },
+    {
+      "id": "d033",
+      "text": "I chewed the chew toy and only the chew toy. Okay, and a tiny corner of the rug.",
+      "tags": ["teething", "playful"]
+    },
+    {
+      "id": "d034",
+      "text": "Teething day. I gnawed on the chew toy while you read. We were both very busy.",
+      "tags": ["teething", "lazy"]
+    },
+    {
+      "id": "d035",
+      "text": "My new teeth are coming in. I tried them out on the rope tug and they work great.",
+      "tags": ["teething", "brave"]
+    },
+    {
+      "id": "d036",
+      "text": "We went to the vet today. I sat on the table like a big pup and they called me a good pup.",
+      "tags": ["firstVetCheckup", "brave"]
+    },
+    {
+      "id": "d037",
+      "text": "The vet had a room full of new smells. I sniffed all of them and got a biscuit at the end.",
+      "tags": ["firstVetCheckup", "curious"]
+    },
+    {
+      "id": "d038",
+      "text": "The vet's table was cold, but you held me the whole time. Now I have my own booklet.",
+      "tags": ["firstVetCheckup", "cuddly", "shy"]
+    },
+    {
+      "id": "d039",
+      "text": "Vet day. I made a big fuss at the door, then forgot all about it when I saw the biscuit tin.",
+      "tags": ["firstVetCheckup", "dramatic", "foodie"]
+    },
+    {
+      "id": "d040",
+      "text": "We walked so far today that I got the zoomies. Three laps of the room and one of the couch.",
+      "tags": ["zoomies", "goalHit", "playful"]
+    },
+    {
+      "id": "d041",
+      "text": "Zoomies after our big walk. You chased me and I let you almost catch me.",
+      "tags": ["zoomies", "goalHit"]
+    },
+    {
+      "id": "d042",
+      "text": "I ran circles around the toy basket tonight. I do not know why. It felt amazing.",
+      "tags": ["zoomies", "dramatic"]
+    },
+    {
+      "id": "d043",
+      "text": "Big walk, big zoomies, big nap on the blanket. In that order.",
+      "tags": ["zoomies", "lazy", "goalHit"]
+    },
+    {
+      "id": "d044",
+      "text": "I found your sock under the bed. It is my sock now. We played tug and I let you win it back.",
+      "tags": ["stoleSock", "playful"]
+    },
+    {
+      "id": "d045",
+      "text": "I guarded a sock in my bed very seriously. You traded me the rope tug for it. Fair deal.",
+      "tags": ["stoleSock", "brave"]
+    },
+    {
+      "id": "d046",
+      "text": "The sock smelled like you, so I kept it in my bed. You found it and laughed.",
+      "tags": ["stoleSock", "cuddly"]
+    },
+    {
+      "id": "d047",
+      "text": "I stole a striped sock and ran a victory lap down the hallway. Best sock yet.",
+      "tags": ["stoleSock", "dramatic"]
+    },
+    {
+      "id": "d048",
+      "text": "A few too many treats today, and my tummy got grumbly. A slow, quiet evening put it right.",
+      "tags": ["upsetTummy", "foodie"]
+    },
+    {
+      "id": "d049",
+      "text": "My tummy was wobbly, so we skipped the treat jar and napped together. Much better now.",
+      "tags": ["upsetTummy", "cuddly"]
+    },
+    {
+      "id": "d050",
+      "text": "Plain kibble and a long nap today. My tummy is back to normal and I feel bouncy again.",
+      "tags": ["upsetTummy", "lazy"]
+    },
+    {
+      "id": "d051",
+      "text": "Short walk today, long cuddle tonight. I liked both.",
+      "tags": ["goalMissed", "cozyWeek", "cuddly"]
+    },
+    {
+      "id": "d052",
+      "text": "We stayed in and I chewed the rope tug while it rained. A cozy kind of day.",
+      "tags": ["goalMissed", "cozyWeek"]
+    },
+    {
+      "id": "d053",
+      "text": "Quiet day. I watched the birds from the windowsill while you read. That was nice.",
+      "tags": ["goalMissed", "cozyWeek", "curious"]
+    },
+    {
+      "id": "d054",
+      "text": "This was a slow, cozy week. I got extra blanket time and so many ear scratches.",
+      "tags": ["cozyWeek"]
+    },
+    {
+      "id": "d055",
+      "text": "We took the short way around the block today. I sniffed every single fence post.",
+      "tags": ["goalMissed", "curious"]
+    },
+    {
+      "id": "d056",
+      "text": "We played tug in the hallway today instead of a long walk. I won twice.",
+      "tags": ["goalMissed", "playful"]
+    },
+    {
+      "id": "d057",
+      "text": "Training today. I almost sat. My back half sat, anyway.",
+      "tags": ["trickProgress", "playful"]
+    },
+    {
+      "id": "d058",
+      "text": "I learned that sitting makes treats appear. I am a genius.",
+      "tags": ["trickProgress", "foodie"]
+    },
+    {
+      "id": "d059",
+      "text": "Sit practice again. I got it right twice and you clapped.",
+      "tags": ["trickProgress"]
+    },
+    {
+      "id": "d060",
+      "text": "I sat. On purpose. You made the happiest sound.",
+      "tags": ["trickProgress", "brave"]
+    },
+    {
+      "id": "d061",
+      "text": "We are resting this week. I found the softest spot on the blanket and I am keeping it.",
+      "tags": ["restMode", "lazy"]
+    },
+    {
+      "id": "d062",
+      "text": "Rest days are good days. I watched the rain and kept your slippers warm.",
+      "tags": ["restMode", "cuddly"]
+    },
+    {
+      "id": "d063",
+      "text": "Quiet week, slow mornings, extra naps by the window. I like resting with you.",
+      "tags": ["restMode", "cozyWeek"]
+    },
+    {
+      "id": "d064",
+      "text": "I looked in the hallway mirror today and I think my legs got longer.",
+      "tags": ["growth", "curious"]
+    },
+    {
+      "id": "d065",
+      "text": "Two weeks together. My ears finally fit my head, mostly.",
+      "tags": ["growth"]
+    },
+    {
+      "id": "d066",
+      "text": "I can reach the couch cushion now without jumping twice. Big pup things.",
+      "tags": ["growth", "brave"]
+    },
+    {
+      "id": "d067",
+      "text": "We walked all the way to the bakery and back. It smelled like warm bread the whole time.",
+      "tags": ["goalHit", "foodie"]
+    },
+    {
+      "id": "d068",
+      "text": "Long walk in the rain today. I shook off on the doormat and you laughed.",
+      "tags": ["goalHit", "playful"]
+    },
+    {
+      "id": "d069",
+      "text": "We found a new path by the river. I want to go back and smell it again.",
+      "tags": ["goalHit", "curious"]
+    },
+    {
+      "id": "d070",
+      "text": "Morning walk, crunchy leaves, then breakfast in my bowl. Perfect order.",
+      "tags": ["goalHit", "foodie"]
+    },
+    {
+      "id": "d071",
+      "text": "{name} is a good name for a pup who carries a plush duck everywhere. That is me.",
+      "tags": ["playful", "cuddly"]
+    },
+    {
+      "id": "d072",
+      "text": "I hid under the bed when the vacuum came out. You sat on the floor with me until it was quiet.",
+      "tags": ["shy", "cuddly"]
+    }
+  ]
+}
