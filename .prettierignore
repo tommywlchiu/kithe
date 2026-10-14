@@ -11,3 +11,4 @@ package-lock.json
 *.md
 apps/*/assets
 expo-env.d.ts
+.vercel
