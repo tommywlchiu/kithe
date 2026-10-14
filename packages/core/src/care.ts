@@ -8,19 +8,12 @@ export type CareAction =
   | { type: 'brushing' }
   | { type: 'buyToy'; toyId: string }
   | { type: 'play'; toyId: string }
-  | { type: 'trainingSession'; trickId: string }
-  | { type: 'vetVisit' };
+  | { type: 'trainingSession'; trickId: string };
 
 /** Built from @kithe/content (economy + items) by the caller; core never imports content. */
 export type CareConfig = {
   needs: NeedsConfig;
-  prices: {
-    meal: number;
-    treat: number;
-    brushing: number;
-    trainingSession: number;
-    vetVisit: number;
-  };
+  prices: { meal: number; treat: number; brushing: number; trainingSession: number };
   effects: { meal: number; treat: number; brushing: number; play: number };
   bondPerAction: number;
   treatDailyLimit: number;
@@ -47,12 +40,37 @@ export type CareOutcome =
       reason: 'notEnoughPawprints' | 'unknownToy' | 'noUsableToy' | 'trickAlreadyLearned';
     };
 
+/** Own keys only, so ids like "toString" can never resolve to a built-in. */
+function toyFor(config: CareConfig, toyId: string) {
+  return Object.hasOwn(config.toys, toyId) ? config.toys[toyId] : undefined;
+}
+
+type Refusal = Extract<CareOutcome, { ok: false }>['reason'];
+
+/** Refusals that do not depend on money come first, so the reason shown is the real one. */
+function refusalFor(state: CareState, action: CareAction, config: CareConfig): Refusal | null {
+  switch (action.type) {
+    case 'buyToy':
+      return toyFor(config, action.toyId) ? null : 'unknownToy';
+    case 'play':
+      return state.toys.some((t) => t.toyId === action.toyId && t.wearDaysLeft > 0)
+        ? null
+        : 'noUsableToy';
+    case 'trainingSession':
+      return (state.trickProgress[action.trickId] ?? 0) >= config.sessionsPerTrick
+        ? 'trickAlreadyLearned'
+        : null;
+    default:
+      return null;
+  }
+}
+
 function priceOf(action: CareAction, config: CareConfig): number {
   switch (action.type) {
     case 'play':
       return 0;
     case 'buyToy':
-      return config.toys[action.toyId]?.price ?? Number.NaN;
+      return toyFor(config, action.toyId)!.price;
     default:
       return config.prices[action.type];
   }
@@ -61,11 +79,13 @@ function priceOf(action: CareAction, config: CareConfig): number {
 /**
  * One care action. Spending comes only from the Pawprint ledger, never money (invariant 1).
  * Each action adds bond unless the pup is mopey, so neglect pauses progress instead of
- * punishing. Needs cap at 100 and never drop below the floor.
+ * punishing. Needs cap at 100 and never drop below the floor. Vet visits arrive with life
+ * events (T5), since a visit only makes sense when a checkup is due.
  */
 export function applyCare(state: CareState, action: CareAction, config: CareConfig): CareOutcome {
+  const refusal = refusalFor(state, action, config);
+  if (refusal) return { ok: false, reason: refusal };
   const price = priceOf(action, config);
-  if (Number.isNaN(price)) return { ok: false, reason: 'unknownToy' };
   if (price > balance(state.ledger)) return { ok: false, reason: 'notEnoughPawprints' };
 
   const floor = config.needs.floor;
@@ -86,22 +106,22 @@ export function applyCare(state: CareState, action: CareAction, config: CareConf
       needs.cleanliness = raiseNeed(needs.cleanliness, config.effects.brushing, floor);
       break;
     case 'buyToy':
-      toys = [...toys, { toyId: action.toyId, wearDaysLeft: config.toys[action.toyId]!.wearDays }];
+      toys = [
+        ...toys,
+        { toyId: action.toyId, wearDaysLeft: toyFor(config, action.toyId)!.wearDays },
+      ];
       break;
     case 'play': {
       const index = toys.findIndex((t) => t.toyId === action.toyId && t.wearDaysLeft > 0);
-      if (index === -1) return { ok: false, reason: 'noUsableToy' };
       toys = toys.map((t, i) => (i === index ? { ...t, wearDaysLeft: t.wearDaysLeft - 1 } : t));
       needs.playfulness = raiseNeed(needs.playfulness, config.effects.play, floor);
       break;
     }
-    case 'trainingSession': {
-      const done = trickProgress[action.trickId] ?? 0;
-      if (done >= config.sessionsPerTrick) return { ok: false, reason: 'trickAlreadyLearned' };
-      trickProgress = { ...trickProgress, [action.trickId]: done + 1 };
-      break;
-    }
-    case 'vetVisit':
+    case 'trainingSession':
+      trickProgress = {
+        ...trickProgress,
+        [action.trickId]: (trickProgress[action.trickId] ?? 0) + 1,
+      };
       break;
   }
 

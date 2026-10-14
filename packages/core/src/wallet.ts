@@ -13,9 +13,16 @@ export type LedgerEntry =
   | { date: IsoDate; amount: number; reason: CreditReason }
   | { date: IsoDate; amount: number; reason: DebitReason };
 
-/** Balance is always derived from the append-only ledger, never stored. */
+/**
+ * Balance is always derived from the append-only ledger, never stored. The direction comes
+ * from the reason, not the stored sign, so a malformed entry (a rehydrated or hand-built
+ * object) can never turn a care spend into income.
+ */
 export function balance(ledger: readonly LedgerEntry[]): number {
-  return ledger.reduce((sum, entry) => sum + entry.amount, 0);
+  return ledger.reduce(
+    (sum, entry) => sum + (entry.reason.kind === 'care' ? -1 : 1) * Math.abs(entry.amount),
+    0,
+  );
 }
 
 export function credit(date: IsoDate, amount: number, reason: CreditReason): LedgerEntry {

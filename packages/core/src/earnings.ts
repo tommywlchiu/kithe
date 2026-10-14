@@ -44,12 +44,15 @@ export function dailyProgress(counts: DayCounts, goal: MovementGoal): number {
   );
 }
 
+// Floating point turns 100 * 0.57 into 56.999...; nudge before flooring so players are never shorted.
+const floorPawprints = (value: number) => Math.floor(value + 1e-9);
+
 /** Linear to `atGoal` at 100%, then linear up to `dailyCap` at 200%, floored, never more. */
 export function dailyEarnings(progress: number, config: EarningsConfig): number {
   assertCount(progress, 'progress');
-  if (progress <= 1) return Math.floor(config.atGoal * progress);
+  if (progress <= 1) return floorPawprints(config.atGoal * progress);
   const bonus = (config.dailyCap - config.atGoal) * Math.min(progress - 1, 1);
-  return Math.floor(config.atGoal + bonus);
+  return Math.min(config.dailyCap, floorPawprints(config.atGoal + bonus));
 }
 
 const mean = (values: readonly number[]) => values.reduce((sum, v) => sum + v, 0) / values.length;
@@ -73,18 +76,13 @@ export function startingGoal(input: StartingGoalInput, config: GoalConfig): Move
   }
   const steps = input.dailySteps.filter((v) => Number.isFinite(v) && v > 0);
   const minutes = input.dailyExerciseMinutes.filter((v) => Number.isFinite(v) && v > 0);
-  return {
-    steps: Math.round(
-      clamp(steps.length ? mean(steps) : config.minSteps, config.minSteps, config.maxSteps),
-    ),
-    exerciseMinutes: Math.round(
-      clamp(
-        minutes.length ? mean(minutes) : config.minExerciseMinutes,
-        config.minExerciseMinutes,
-        config.maxExerciseMinutes,
-      ),
-    ),
-  };
+  return clampGoal(
+    {
+      steps: steps.length ? mean(steps) : config.minSteps,
+      exerciseMinutes: minutes.length ? mean(minutes) : config.minExerciseMinutes,
+    },
+    config,
+  );
 }
 
 /** Day 1 is a guaranteed win: a fraction of the starting goal (not clamped to the floor). */
@@ -117,7 +115,10 @@ export function weeklyGoalAdjust(
   if (!Number.isInteger(daysHit) || daysHit < 0 || daysHit > 7) {
     throw new RangeError(`daysHit must be an integer 0 to 7, got ${daysHit}`);
   }
-  if (pendingManualGoal) return clampGoal(pendingManualGoal, config);
+  // Only a lowering counts; a raise by hand is ignored so the goal can only ease down early.
+  if (pendingManualGoal && pendingManualGoal.steps < goal.steps) {
+    return clampGoal(pendingManualGoal, config);
+  }
   let factor = 1;
   if (daysHit >= config.raiseAfterDaysHit) factor = 1 + config.weeklyAdjustPct;
   else if (daysHit <= config.lowerAtOrBelowDaysHit) factor = 1 - config.weeklyAdjustPct;

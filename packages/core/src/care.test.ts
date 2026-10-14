@@ -12,7 +12,7 @@ const NEEDS: NeedsConfig = {
 };
 const CARE: CareConfig = {
   needs: NEEDS,
-  prices: { meal: 15, treat: 5, brushing: 10, trainingSession: 60, vetVisit: 40 },
+  prices: { meal: 15, treat: 5, brushing: 10, trainingSession: 60 },
   effects: { meal: 25, treat: 5, brushing: 40, play: 35 },
   bondPerAction: 2,
   treatDailyLimit: 3,
@@ -89,6 +89,14 @@ describe('wallet', () => {
       debit('2026-10-14', 15, 'meal'),
     ];
     expect(balance(ledger)).toBe(160);
+  });
+
+  it('takes direction from the reason, so a malformed entry cannot mint Pawprints', () => {
+    const forged: LedgerEntry[] = [
+      { date: '2026-10-14', amount: 500, reason: { kind: 'care', action: 'meal' } },
+      { date: '2026-10-14', amount: -100, reason: { kind: 'movement' } },
+    ];
+    expect(balance(forged)).toBe(-400);
   });
 
   it('rejects fractional or negative amounts', () => {
@@ -196,6 +204,24 @@ describe('applyCare', () => {
     }
     expect(mood(s.needs, NEEDS)).toBe('content');
     expect(balance(s.ledger)).toBe(60);
+  });
+
+  it('never resolves built-in object keys as toys', () => {
+    expect(applyCare(state(), { type: 'buyToy', toyId: 'toString' }, CARE)).toEqual({
+      ok: false,
+      reason: 'unknownToy',
+    });
+  });
+
+  it('reports the real refusal before the money check', () => {
+    const learnedButBroke = state({
+      trickProgress: { sit: 5 },
+      ledger: [credit('2026-10-14', 10, { kind: 'movement' })],
+    });
+    expect(applyCare(learnedButBroke, { type: 'trainingSession', trickId: 'sit' }, CARE)).toEqual({
+      ok: false,
+      reason: 'trickAlreadyLearned',
+    });
   });
 
   it('has no death, starvation, or neglect-illness state (invariant 2)', () => {

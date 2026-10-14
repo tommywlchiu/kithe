@@ -64,6 +64,12 @@ describe('dailyEarnings', () => {
     expect(dailyEarnings(progress, EARNINGS)).toBe(pawprints);
   });
 
+  it('does not short the player on floating-point progress values', () => {
+    expect(dailyEarnings(570 / 1000, EARNINGS)).toBe(57);
+    expect(dailyEarnings(0.29, EARNINGS)).toBe(29);
+    expect(dailyEarnings(0.58, EARNINGS)).toBe(58);
+  });
+
   it('never exceeds the daily cap', () => {
     for (let p = 0; p <= 10; p += 0.07) {
       expect(dailyEarnings(p, EARNINGS)).toBeLessThanOrEqual(EARNINGS.dailyCap);
@@ -149,6 +155,13 @@ describe('weeklyGoalAdjust', () => {
     expect(weeklyGoalAdjust(goal, 7, GOAL, { steps: 100, exerciseMinutes: 1 })).toEqual({
       steps: 2000,
       exerciseMinutes: 15,
+    });
+  });
+
+  it('ignores a hand-set goal that is higher, so manual changes only ease the goal down', () => {
+    expect(weeklyGoalAdjust(goal, 0, GOAL, { steps: 9000, exerciseMinutes: 45 })).toEqual({
+      steps: 5400,
+      exerciseMinutes: 27,
     });
   });
 
