@@ -4,41 +4,62 @@
     {
       "id": "firstVetCheckup",
       "name": "First vet checkup",
-      "trigger": { "type": "onDay", "day": 5 },
-      "negative": true,
+      "trigger": {
+        "type": "onDay",
+        "day": 5
+      },
+      "negative": false,
       "response": "vetVisit",
-      "reward": { "bond": 3, "memory": "healthBooklet" },
-      "resolvesWithinHours": 48
+      "reward": {
+        "bond": 3,
+        "memory": "healthBooklet"
+      }
     },
     {
       "id": "teething",
       "name": "Teething",
-      "trigger": { "type": "onDay", "day": 2 },
+      "trigger": {
+        "type": "onDay",
+        "day": 2
+      },
       "negative": true,
       "response": "chewToy",
-      "reward": { "trickProgress": 1 },
+      "reward": {
+        "trickProgress": 1
+      },
       "resolvesWithinHours": 48
     },
     {
       "id": "zoomies",
       "name": "Zoomies",
-      "trigger": { "type": "afterGoalBeat" },
+      "trigger": {
+        "type": "afterGoalBeat"
+      },
       "negative": false,
       "response": "play",
-      "reward": { "memory": "zoomiesPhoto" }
+      "reward": {
+        "memory": "zoomiesPhoto"
+      }
     },
     {
       "id": "stoleSock",
       "name": "Stole your sock",
-      "trigger": { "type": "randomWeekly", "chance": 0.14 },
+      "trigger": {
+        "type": "randomWeekly",
+        "chance": 0.14
+      },
       "negative": false,
       "response": "play",
-      "reward": { "bond": 5 }
+      "reward": {
+        "bond": 5
+      }
     },
     {
       "id": "upsetTummy",
       "name": "Upset tummy",
-      "trigger": { "type": "treatsOverLimit" },
+      "trigger": {
+        "type": "treatsOverLimit"
+      },
       "negative": true,
       "response": null,
       "reward": null,
