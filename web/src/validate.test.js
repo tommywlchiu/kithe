@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isReason, MESSAGES, sanitizeRef, validateSignup } from './validate';
+import { isReason, MESSAGES, sanitizeRef, uuidV4, validateSignup } from './validate';
 
 const good = { email: ' Tommy@Example.com ', phone: 'android', isAdult: true };
 
@@ -48,5 +48,18 @@ describe('isReason', () => {
   it('accepts only the five thank-you options', () => {
     expect(isReason('lease')).toBe(true);
     expect(isReason('drop table')).toBe(false);
+  });
+});
+
+describe('uuidV4', () => {
+  const V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+  it('uses randomUUID when the browser has it', () => {
+    expect(uuidV4()).toMatch(V4);
+  });
+
+  it('builds a valid v4 id without randomUUID', () => {
+    const legacy = { getRandomValues: (a) => globalThis.crypto.getRandomValues(a) };
+    expect(uuidV4(legacy)).toMatch(V4);
   });
 });

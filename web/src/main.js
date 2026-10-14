@@ -1,39 +1,39 @@
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config.js';
-import { isReason, sanitizeRef, validateSignup } from './validate.js';
+import { isReason, sanitizeRef, uuidV4, validateSignup } from './validate.js';
 
 const ref = sanitizeRef(new URLSearchParams(window.location.search).get('ref'));
 
-function headers() {
-  const h = {
-    apikey: SUPABASE_PUBLISHABLE_KEY,
-    'Content-Type': 'application/json',
-    Prefer: 'return=minimal',
-  };
-  // Legacy anon keys are JWTs and also go in Authorization; new publishable keys do not.
-  if (SUPABASE_PUBLISHABLE_KEY.startsWith('eyJ')) {
-    h.Authorization = `Bearer ${SUPABASE_PUBLISHABLE_KEY}`;
-  }
-  return h;
+const HEADERS = { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' };
+
+// The database functions answer the same way whether or not an email is already listed,
+// so the page never reveals who signed up.
+async function rpc(fn, args) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: HEADERS,
+    body: JSON.stringify(args),
+  });
+  if (res.ok) return;
+  const error = new Error(`${fn} failed (${res.status})`);
+  error.status = res.status;
+  throw error;
 }
 
-/** @returns {Promise<'created' | 'duplicate'>} */
-async function insert(table, row) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-    method: 'POST',
-    headers: headers(),
-    body: JSON.stringify(row),
-  });
-  if (res.ok) return 'created';
-  if (res.status === 409) return 'duplicate';
-  throw new Error(`waitlist insert failed (${res.status})`);
+function failureMessage(error) {
+  if (error.status === 400) return 'Please double-check your email and try again.';
+  if (error.status === 401 || error.status === 403 || error.status === 404) {
+    return "Something's wrong on our side. Please email marqueofficialhq@gmail.com and we'll add you by hand.";
+  }
+  return 'Something went wrong saving your spot. Please try again in a minute.';
 }
 
 const form = document.querySelector('#waitlist-form');
 const formSection = document.querySelector('#form-section');
 const thanks = document.querySelector('#thanks');
-const thanksTitle = document.querySelector('#thanks-title');
 const status = document.querySelector('#form-status');
 const submit = form.querySelector('button[type="submit"]');
+const reasonStatus = document.querySelector('#reason-status');
+const reasonButtons = () => document.querySelectorAll('#reasons button');
 let signupId = null;
 
 function showErrors(errors) {
@@ -46,10 +46,20 @@ function showErrors(errors) {
   if (first) document.querySelector(`[data-field="${first}"]`).focus();
 }
 
+function showThanks() {
+  formSection.hidden = true;
+  thanks.hidden = false;
+  thanks.focus();
+}
+
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   const data = new FormData(form);
-  if (data.get('website')) return; // honeypot: humans never see this field
+  // Honeypot: real visitors never see this field. Bots get the normal thank-you screen.
+  if (data.get('kithe_hp')) {
+    showThanks();
+    return;
+  }
 
   const result = validateSignup({
     email: data.get('email'),
@@ -62,40 +72,31 @@ form.addEventListener('submit', async (event) => {
   submit.disabled = true;
   status.textContent = 'Saving your spot...';
   try {
-    signupId = crypto.randomUUID();
-    const outcome = await insert('waitlist_signups', {
-      id: signupId,
-      email: result.value.email,
-      phone: result.value.phone,
-      is_adult: true,
-      ref,
+    const id = uuidV4();
+    await rpc('join_waitlist', {
+      p_id: id,
+      p_email: result.value.email,
+      p_phone: result.value.phone,
+      p_is_adult: true,
+      p_ref: ref,
     });
-    if (outcome === 'duplicate') {
-      signupId = null;
-      thanksTitle.textContent = "You're already on the list! Watch your inbox for your invite.";
-    }
-    formSection.hidden = true;
-    thanks.hidden = false;
-    thanks.focus();
-  } catch {
-    status.textContent = 'Something went wrong saving your spot. Please try again in a minute.';
+    signupId = id;
+    showThanks();
+  } catch (error) {
+    status.textContent = failureMessage(error);
     submit.disabled = false;
   }
 });
 
 document.querySelector('#reasons').addEventListener('click', async (event) => {
   const button = event.target.closest('button[data-reason]');
-  if (!button || !signupId) {
-    if (button) document.querySelector('#reason-status').textContent = 'Thank you!';
-    return;
-  }
-  const reason = button.dataset.reason;
-  if (!isReason(reason)) return;
-  for (const b of document.querySelectorAll('#reasons button')) b.disabled = true;
+  if (!button || !signupId || !isReason(button.dataset.reason)) return;
+  for (const b of reasonButtons()) b.disabled = true;
   try {
-    await insert('waitlist_answers', { signup_id: signupId, reason });
+    await rpc('answer_waitlist', { p_signup_id: signupId, p_reason: button.dataset.reason });
+    reasonStatus.textContent = 'Thank you, that really helps.';
   } catch {
-    // Optional question; the signup is already saved.
+    reasonStatus.textContent = "That didn't save. Tap your answer again?";
+    for (const b of reasonButtons()) b.disabled = false;
   }
-  document.querySelector('#reason-status').textContent = 'Thank you, that really helps.';
 });
