@@ -40,7 +40,7 @@ async function perDay(
       },
     ),
     queryQuantitySamples(identifier, {
-      limit: 1000,
+      limit: 0, // 0 means no limit
       unit,
       filter: { date, metadata: USER_ENTERED },
     }),
@@ -72,7 +72,7 @@ export const movementSource: MovementSource = {
 
   async requestAccess() {
     await requestAuthorization({ toRead: [STEPS, EXERCISE, PUSHES] });
-    return { steps: true, exercise: true, wheelchairPushes: true };
+    return null;
   },
 
   async readDays(dates) {

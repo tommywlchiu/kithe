@@ -6,8 +6,13 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { todayLocal } from '../../movement/localDay';
 import { movementSource, seedTestSteps } from '../../movement/movementSource';
 
-// T7 spike screen: proves the health read path on a real device. Development builds only.
-export default function MovementSpikeScreen() {
+// T7 spike screen: proves the health read path on a real device. Development builds only:
+// the guard runs before the inner screen mounts, so store builds never touch the health APIs.
+export default function MovementSpikeRoute() {
+  return __DEV__ ? <MovementSpikeScreen /> : <Redirect href="/" />;
+}
+
+function MovementSpikeScreen() {
   const [availability, setAvailability] = useState('checking');
   const [access, setAccess] = useState<MovementAccess | null>(null);
   const [days, setDays] = useState<DayMovement[]>([]);
@@ -17,12 +22,8 @@ export default function MovementSpikeScreen() {
   const read = useCallback(async () => {
     if (!movementSource) return;
     const started = Date.now();
-    try {
-      setDays(await movementSource.readDays(lastNDates(todayLocal(), 7)));
-      setReadMs(Date.now() - started);
-    } catch (error) {
-      setMessage(`read failed: ${String(error)}`);
-    }
+    setDays(await movementSource.readDays(lastNDates(todayLocal(), 7)));
+    setReadMs(Date.now() - started);
   }, []);
 
   useEffect(() => {
@@ -36,7 +37,6 @@ export default function MovementSpikeScreen() {
       .catch(() => setAccess(null));
   }, []);
 
-  if (!__DEV__) return <Redirect href="/" />;
   if (!movementSource) {
     return (
       <View style={styles.screen}>
@@ -59,7 +59,10 @@ export default function MovementSpikeScreen() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.text}>Source: {movementSource.platform}</Text>
       <Text style={styles.text}>Availability: {availability}</Text>
-      <Text style={styles.text}>Access: {access ? JSON.stringify(access) : 'not requested'}</Text>
+      <Text style={styles.text}>
+        Access:{' '}
+        {access ? JSON.stringify(access) : 'unknown (HealthKit hides grants, or not requested)'}
+      </Text>
 
       <Button
         label="Request access"

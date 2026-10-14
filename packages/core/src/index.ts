@@ -1,6 +1,9 @@
 export { clamp } from './clamp';
-export { lastNDates } from './movement';
+export { combineSourceRecords, lastNDates } from './movement';
 export type {
+  DayTotal,
+  DayWindow,
+  SourceRecord,
   DayMovement,
   IsoDate,
   MovementAccess,

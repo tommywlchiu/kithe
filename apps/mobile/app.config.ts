@@ -2,8 +2,9 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 // Only development builds may write health data, so the emulator can be seeded with test
 // steps. Store builds read only, which keeps the Play health declaration minimal.
-// EAS profiles set APP_VARIANT explicitly; local builds default to development.
-const variant = process.env.APP_VARIANT ?? (process.env.EAS_BUILD ? 'production' : 'development');
+// Read-only unless APP_VARIANT=development, which `npm run android` and the EAS development
+// profile set. Any other build, local release builds included, cannot write.
+const variant = process.env.APP_VARIANT ?? 'production';
 const isDevelopmentVariant = variant === 'development';
 
 const HEALTH_CONNECT_READ = [

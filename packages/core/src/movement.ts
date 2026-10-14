@@ -28,8 +28,54 @@ export interface MovementSource {
    * `null` means the platform cannot tell (HealthKit hides read grants).
    */
   getAccess(): Promise<MovementAccess | null>;
-  requestAccess(): Promise<MovementAccess>;
+  /** Prompts for read access; resolves `null` when the platform will not say what was granted. */
+  requestAccess(): Promise<MovementAccess | null>;
   readDays(dates: readonly IsoDate[]): Promise<DayMovement[]>;
+}
+
+/** One health record as read from a platform store, with times in epoch milliseconds. */
+export type SourceRecord = {
+  origin: string;
+  startMs: number;
+  endMs: number;
+  amount: number;
+  manual: boolean;
+};
+
+export type DayWindow = { date: IsoDate; startMs: number; endMs: number };
+
+export type DayTotal = { date: IsoDate; amount: number; manualRecords: number };
+
+/**
+ * Per-day movement from raw records of one type (Android has no manual-aware aggregate).
+ * Each record is split across days by time overlap, so a walk across midnight counts once.
+ * Manual records never count. Each source app is summed on its own and the day takes the
+ * highest app: two apps logging the same walk are not double-counted, and one app's manual
+ * entry can never reduce another app's real movement.
+ */
+export function combineSourceRecords(
+  records: readonly SourceRecord[],
+  days: readonly DayWindow[],
+): DayTotal[] {
+  return days.map((day) => {
+    const byOrigin = new Map<string, number>();
+    let manualRecords = 0;
+    for (const record of records) {
+      const overlap = Math.min(record.endMs, day.endMs) - Math.max(record.startMs, day.startMs);
+      const duration = record.endMs - record.startMs;
+      const instantInDay =
+        duration <= 0 && record.startMs >= day.startMs && record.startMs < day.endMs;
+      if (overlap <= 0 && !instantInDay) continue;
+      if (record.manual) {
+        if (instantInDay || record.startMs >= day.startMs) manualRecords += 1;
+        continue;
+      }
+      const share = duration <= 0 ? record.amount : (record.amount * overlap) / duration;
+      byOrigin.set(record.origin, (byOrigin.get(record.origin) ?? 0) + share);
+    }
+    const amount = Math.max(0, ...byOrigin.values());
+    return { date: day.date, amount, manualRecords };
+  });
 }
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;

@@ -1,6 +1,12 @@
-import type { DayMovement, IsoDate, MovementAccess, MovementSource } from '@kithe/core';
 import {
-  aggregateRecord,
+  combineSourceRecords,
+  type DayMovement,
+  type DayWindow,
+  type MovementAccess,
+  type MovementSource,
+  type SourceRecord,
+} from '@kithe/core';
+import {
   getGrantedPermissions,
   getSdkStatus,
   initialize,
@@ -14,17 +20,25 @@ import { localDayBounds } from './localDay';
 
 const MANUAL_ENTRY = 3; // RecordingMethod.RECORDING_METHOD_MANUAL_ENTRY
 
+type RecordType = 'Steps' | 'ExerciseSession' | 'WheelchairPushes';
+
 const READS = [
   { accessType: 'read', recordType: 'Steps' },
   { accessType: 'read', recordType: 'ExerciseSession' },
   { accessType: 'read', recordType: 'WheelchairPushes' },
 ] as const;
 
-let initialized: Promise<boolean> | null = null;
-const ensureInitialized = () => (initialized ??= initialize());
+// Cache only a successful initialize, so the app recovers once Health Connect is installed
+// or updated instead of failing for the rest of the process.
+let ready = false;
+async function ensureInitialized() {
+  if (ready) return;
+  if (!(await initialize())) throw new Error('Health Connect is not ready on this device');
+  ready = true;
+}
 
 function toAccess(granted: readonly { accessType: string; recordType?: string }[]): MovementAccess {
-  const has = (recordType: string) =>
+  const has = (recordType: RecordType) =>
     granted.some((p) => p.accessType === 'read' && p.recordType === recordType);
   return {
     steps: has('Steps'),
@@ -33,19 +47,13 @@ function toAccess(granted: readonly { accessType: string; recordType?: string }[
   };
 }
 
-type Manual = { count: number; records: number; seconds: number };
-
-// Aggregation already applies Health Connect's per-app priority de-duplication, but it
-// cannot filter by recording method, so manual entries are read separately and subtracted.
-async function manualEntries(
-  recordType: 'Steps' | 'WheelchairPushes' | 'ExerciseSession',
-  start: Date,
-  end: Date,
-): Promise<Manual> {
-  const totals: Manual = { count: 0, records: 0, seconds: 0 };
+// One paginated read per type for the whole window keeps the call count flat as the window
+// grows (Health Connect rate-limits foreground reads). Combining happens in @kithe/core.
+async function readSourceRecords(type: RecordType, start: Date, end: Date) {
+  const records: SourceRecord[] = [];
   let pageToken: string | undefined;
   do {
-    const page = await readRecords(recordType, {
+    const page = await readRecords(type, {
       timeRangeFilter: {
         operator: 'between',
         startTime: start.toISOString(),
@@ -54,57 +62,25 @@ async function manualEntries(
       pageToken,
     });
     for (const record of page.records) {
-      if (record.metadata?.recordingMethod !== MANUAL_ENTRY) continue;
-      totals.records += 1;
-      if ('count' in record && typeof record.count === 'number') totals.count += record.count;
-      totals.seconds +=
-        (new Date(record.endTime).getTime() - new Date(record.startTime).getTime()) / 1000;
+      const startMs = new Date(record.startTime).getTime();
+      const endMs = new Date(record.endTime).getTime();
+      const amount =
+        type === 'ExerciseSession'
+          ? (endMs - startMs) / 60_000
+          : 'count' in record && typeof record.count === 'number'
+            ? record.count
+            : 0;
+      records.push({
+        origin: record.metadata?.dataOrigin ?? 'unknown',
+        startMs,
+        endMs,
+        amount,
+        manual: record.metadata?.recordingMethod === MANUAL_ENTRY,
+      });
     }
     pageToken = page.pageToken || undefined;
   } while (pageToken);
-  return totals;
-}
-
-async function readDay(date: IsoDate, access: MovementAccess): Promise<DayMovement> {
-  const { start, end } = localDayBounds(date);
-  const timeRangeFilter = {
-    operator: 'between' as const,
-    startTime: start.toISOString(),
-    endTime: end.toISOString(),
-  };
-  let steps = 0;
-  let exerciseMinutes = 0;
-  let wheelchairPushes = 0;
-  let manualRecordsExcluded = 0;
-
-  if (access.steps) {
-    const [total, manual] = await Promise.all([
-      aggregateRecord({ recordType: 'Steps', timeRangeFilter }),
-      manualEntries('Steps', start, end),
-    ]);
-    steps = Math.max(0, total.COUNT_TOTAL - manual.count);
-    manualRecordsExcluded += manual.records;
-  }
-  if (access.exercise) {
-    const [total, manual] = await Promise.all([
-      aggregateRecord({ recordType: 'ExerciseSession', timeRangeFilter }),
-      manualEntries('ExerciseSession', start, end),
-    ]);
-    exerciseMinutes = Math.max(
-      0,
-      Math.round((total.EXERCISE_DURATION_TOTAL.inSeconds - manual.seconds) / 60),
-    );
-    manualRecordsExcluded += manual.records;
-  }
-  if (access.wheelchairPushes) {
-    const [total, manual] = await Promise.all([
-      aggregateRecord({ recordType: 'WheelchairPushes', timeRangeFilter }),
-      manualEntries('WheelchairPushes', start, end),
-    ]);
-    wheelchairPushes = Math.max(0, total.COUNT_TOTAL - manual.count);
-    manualRecordsExcluded += manual.records;
-  }
-  return { date, steps, exerciseMinutes, wheelchairPushes, manualRecordsExcluded };
+  return records;
 }
 
 export const movementSource: MovementSource = {
@@ -130,9 +106,30 @@ export const movementSource: MovementSource = {
   },
 
   async readDays(dates) {
+    if (dates.length === 0) return [];
     await ensureInitialized();
     const access = toAccess(await getGrantedPermissions());
-    return Promise.all(dates.map((date) => readDay(date, access)));
+    const windows: DayWindow[] = dates.map((date) => {
+      const { start, end } = localDayBounds(date);
+      return { date, startMs: start.getTime(), endMs: end.getTime() };
+    });
+    const start = new Date(Math.min(...windows.map((w) => w.startMs)));
+    const end = new Date(Math.max(...windows.map((w) => w.endMs)));
+    const totalsFor = async (type: RecordType, granted: boolean) =>
+      combineSourceRecords(granted ? await readSourceRecords(type, start, end) : [], windows);
+    const [steps, exercise, pushes] = await Promise.all([
+      totalsFor('Steps', access.steps),
+      totalsFor('ExerciseSession', access.exercise),
+      totalsFor('WheelchairPushes', access.wheelchairPushes),
+    ]);
+    return dates.map((date, i): DayMovement => ({
+      date,
+      steps: Math.round(steps[i]!.amount),
+      exerciseMinutes: Math.round(exercise[i]!.amount),
+      wheelchairPushes: Math.round(pushes[i]!.amount),
+      manualRecordsExcluded:
+        steps[i]!.manualRecords + exercise[i]!.manualRecords + pushes[i]!.manualRecords,
+    }));
   },
 };
 
