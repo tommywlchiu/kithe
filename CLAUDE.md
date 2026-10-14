@@ -36,7 +36,8 @@ A cozy dog-raising game for iPhone and Android where real-life movement is the o
 - `packages/content` — `@kithe/content`: zod-validated data (`src/data/*.json`, schemas in `src/schema/`)
 - `scripts/` — `@kithe/scripts`: `economy-sim.ts` and the Claude Code hooks in `scripts/hooks/`
 - `docs/` — design doc, specs, decisions
-- Planned: `backend/supabase` (waitlist first), `web/` (landing page)
+- `web/` — static landing page and waitlist (plain HTML/CSS/JS, no build), live at https://kithe-dusky.vercel.app; deploy with `npx vercel@latest deploy --prod` from `web/` (Vercel account marqueofficialhq-5849, project `kithe`)
+- `backend/supabase/migrations/` — SQL run by hand in the Supabase SQL Editor (project `gmrktteafiuejkaeewrb`); the public key may only call `join_waitlist` and `answer_waitlist`, never touch tables
 
 ## Conventions
 - Game rules live in `packages/core` as pure functions with test vectors; the app and the economy sim both call them. Never duplicate a rule in UI code.
