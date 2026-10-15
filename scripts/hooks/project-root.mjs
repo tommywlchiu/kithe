@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export function readPayload() {
@@ -12,14 +12,20 @@ export function readPayload() {
 }
 
 // The checkout the session is working in: the payload cwd's git root, so a worktree session
-// checks the worktree, not the main checkout that CLAUDE_PROJECT_DIR points at.
+// checks the worktree, not the main checkout that CLAUDE_PROJECT_DIR points at. A git root
+// without package.json is a nested repo (docs/ is the private docs repo), so keep climbing.
 // realpathSync.native restores the canonical drive-letter casing on Windows; a lowercase
 // c:\ makes Node load one file as two modules (vitest then fails every suite).
 export function projectRoot(payload) {
   const fallback =
     process.env.CLAUDE_PROJECT_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-  const cwd = payload?.cwd && existsSync(payload.cwd) ? payload.cwd : fallback;
-  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8' });
-  const root = top.status === 0 ? top.stdout.trim() : fallback;
-  return realpathSync.native(root);
+  let cwd = payload?.cwd && existsSync(payload.cwd) ? payload.cwd : fallback;
+  for (let depth = 0; depth < 5; depth += 1) {
+    const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8' });
+    if (top.status !== 0) break;
+    const root = top.stdout.trim();
+    if (existsSync(join(root, 'package.json'))) return realpathSync.native(root);
+    cwd = dirname(root);
+  }
+  return realpathSync.native(fallback);
 }
