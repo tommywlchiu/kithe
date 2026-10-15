@@ -30,6 +30,13 @@ export interface MovementSource {
   getAccess(): Promise<MovementAccess | null>;
   /** Prompts for read access; resolves `null` when the platform will not say what was granted. */
   requestAccess(): Promise<MovementAccess | null>;
+  /**
+   * Whether `requestAccess` would show the system prompt. HealthKit asks only once; after the
+   * first answer a request silently does nothing, so the app points to `openSettings` instead.
+   */
+  canPrompt?(): Promise<boolean>;
+  /** Opens the place where the player can change access (the Health app on iOS). */
+  openSettings?(): Promise<void>;
   readDays(dates: readonly IsoDate[]): Promise<DayMovement[]>;
 }
 

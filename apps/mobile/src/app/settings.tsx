@@ -45,8 +45,17 @@ export default function Settings() {
           : 'Steps come from Health Connect.';
 
   const reconnect = async () => {
+    const source = movementSource;
     try {
-      await movementSource?.requestAccess();
+      // iOS shows its Health sheet only once; after that, point to the Health app.
+      if (source?.canPrompt && source.openSettings && !(await source.canPrompt())) {
+        Alert.alert('Steps live in the Health app', 'Tap your photo, then Apps, then Kithe.', [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Open Health', onPress: () => void source.openSettings?.() },
+        ]);
+        return;
+      }
+      await source?.requestAccess();
     } finally {
       await refresh();
     }

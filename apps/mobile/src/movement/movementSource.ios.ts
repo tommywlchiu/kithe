@@ -1,10 +1,14 @@
 import type { DayMovement, IsoDate, MovementSource } from '@kithe/core';
 import {
+  AuthorizationRequestStatus,
+  getRequestStatusForAuthorization,
   isHealthDataAvailableAsync,
   queryQuantitySamples,
   queryStatisticsCollectionForQuantity,
   requestAuthorization,
 } from '@kingstinct/react-native-healthkit';
+
+import { Linking } from 'react-native';
 
 import { localDayBounds, todayLocal } from './localDay';
 
@@ -12,6 +16,7 @@ const STEPS = 'HKQuantityTypeIdentifierStepCount';
 const EXERCISE = 'HKQuantityTypeIdentifierAppleExerciseTime';
 const PUSHES = 'HKQuantityTypeIdentifierPushCount';
 type Identifier = typeof STEPS | typeof EXERCISE | typeof PUSHES;
+const READ: Identifier[] = [STEPS, EXERCISE, PUSHES];
 
 const USER_ENTERED = { withMetadataKey: 'HKWasUserEntered' } as const;
 
@@ -71,8 +76,17 @@ export const movementSource: MovementSource = {
   },
 
   async requestAccess() {
-    await requestAuthorization({ toRead: [STEPS, EXERCISE, PUSHES] });
+    await requestAuthorization({ toRead: READ });
     return null;
+  },
+
+  async canPrompt() {
+    const status = await getRequestStatusForAuthorization({ toRead: READ });
+    return status !== AuthorizationRequestStatus.unnecessary;
+  },
+
+  async openSettings() {
+    await Linking.openURL('x-apple-health://');
   },
 
   async readDays(dates) {
