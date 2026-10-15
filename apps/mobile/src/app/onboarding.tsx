@@ -49,7 +49,8 @@ async function goalFromHistory(): Promise<MovementGoal | null> {
 }
 
 export default function Onboarding() {
-  const { adoptPet } = useGame();
+  const { adoptPet, unreadableSave } = useGame();
+  const [error, setError] = useState('');
   const [step, setStep] = useState<Step>('meet');
   const [breed, setBreed] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -59,8 +60,15 @@ export default function Onboarding() {
   const finish = async (goal: MovementGoal) => {
     if (!breed) return;
     setBusy(true);
-    await adoptPet({ name: trimmed, breed, startingGoal: goal });
-    router.replace('/');
+    setError('');
+    try {
+      await adoptPet({ name: trimmed, breed, startingGoal: goal });
+      router.replace('/');
+    } catch {
+      setError('Something went wrong saving. Please try again.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const connectHealth = async () => {
@@ -89,6 +97,12 @@ export default function Onboarding() {
                 Meet the pups.
               </Text>
               <Text style={styles.lede}>One of them is waiting for you.</Text>
+              {unreadableSave ? (
+                <Text style={styles.note}>
+                  We could not open your saved pup, so it is kept safe on this phone. Email
+                  marqueofficialhq@gmail.com and we will help.
+                </Text>
+              ) : null}
               {breeds.map((b) => (
                 <Pressable
                   key={b.id}
@@ -166,6 +180,11 @@ export default function Onboarding() {
               ))}
             </>
           )}
+          {error ? (
+            <Text style={styles.note} accessibilityLiveRegion="polite">
+              {error}
+            </Text>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -1,5 +1,5 @@
 import { Link, router } from 'expo-router';
-import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { useGame } from '../game/GameProvider';
 import { movementSource } from '../movement/movementSource';
@@ -15,7 +15,7 @@ export default function Settings() {
       ? 'Step counting is not available on this phone.'
       : health.kind === 'missing'
         ? 'Step counting is off.'
-        : health.access === null
+        : Platform.OS === 'ios'
           ? 'Steps come from Apple Health.'
           : 'Steps come from Health Connect.';
 

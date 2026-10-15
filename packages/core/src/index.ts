@@ -1,7 +1,16 @@
 export { applyCare, trickLearned } from './care';
 export type { CareAction, CareConfig, CareOutcome, CareState, OwnedToy } from './care';
 export { clamp } from './clamp';
-export { act, adopt, advanceToNow, requestGoal, setRestMode, syncMovement, view } from './game';
+export {
+  act,
+  adopt,
+  advanceToNow,
+  currentTrick,
+  requestGoal,
+  setRestMode,
+  syncMovement,
+  view,
+} from './game';
 export type {
   ActOutcome,
   AdoptInput,

@@ -106,6 +106,12 @@ describe('syncMovement', () => {
     expect(balance(s.care.ledger)).toBe(212);
     expect(s.days[0]!.progress).toBe(1.5);
   });
+
+  it('returns the same state when nothing new arrived, so callers can skip saving', () => {
+    const s = syncMovement(start(), { '2026-10-14': steps(3000) }, CONFIG);
+    expect(syncMovement(s, { '2026-10-14': steps(3000) }, CONFIG)).toBe(s);
+    expect(syncMovement(s, {}, CONFIG)).toBe(s);
+  });
 });
 
 describe('advanceToNow', () => {

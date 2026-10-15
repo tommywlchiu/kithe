@@ -8,6 +8,8 @@ import {
   type CareAction,
   type DayCounts,
   type GameState,
+  lastNDates,
+  localDate,
   type MovementAccess,
   setRestMode,
   syncMovement,
@@ -29,7 +31,7 @@ import { deleteAllData, loadGame, saveGame } from '../storage/save';
 export type HealthStatus =
   | { kind: 'unsupported' }
   | { kind: 'ok'; access: MovementAccess | null }
-  /** Some or all reads were revoked: show "reconnect", never a mopey day. */
+  /** Every read was revoked: show "reconnect", never a mopey day. */
   | { kind: 'missing'; access: MovementAccess };
 
 type Status = 'loading' | 'needs-adoption' | 'ready';
@@ -38,6 +40,8 @@ type GameContextValue = {
   status: Status;
   game: GameState | null;
   health: HealthStatus;
+  /** Set when a save could not be read; it was kept aside instead of being overwritten. */
+  unreadableSave: boolean;
   adoptPet: (input: Omit<AdoptInput, 'nowMs' | 'seed' | 'timeZone'>) => Promise<void>;
   care: (action: CareAction) => Promise<ActOutcome>;
   setResting: (on: boolean) => Promise<void>;
@@ -48,6 +52,7 @@ type GameContextValue = {
 const GameContext = createContext<GameContextValue | null>(null);
 
 const deviceTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
+const safeCount = (n: number) => (Number.isFinite(n) && n > 0 ? n : 0);
 
 async function readHealth(): Promise<HealthStatus> {
   if (!movementSource) return { kind: 'unsupported' };
@@ -62,19 +67,19 @@ async function readHealth(): Promise<HealthStatus> {
   }
 }
 
-/** Movement for the days that can still sync (the last 7), keyed by date. */
+/** Movement for the last 7 days up to today in the home time zone. Bad values count as 0. */
 async function readMovement(game: GameState): Promise<Record<string, DayCounts>> {
   if (!movementSource) return {};
-  const dates = game.days.slice(-7).map((d) => d.date);
+  const today = localDate(Date.now(), game.clock.homeTimeZone);
   try {
-    const days = await movementSource.readDays(dates);
+    const days = await movementSource.readDays(lastNDates(today, 7));
     return Object.fromEntries(
       days.map((d) => [
         d.date,
         {
-          steps: d.steps,
-          exerciseMinutes: d.exerciseMinutes,
-          wheelchairPushes: d.wheelchairPushes,
+          steps: safeCount(d.steps),
+          exerciseMinutes: safeCount(d.exerciseMinutes),
+          wheelchairPushes: safeCount(d.wheelchairPushes),
         },
       ]),
     );
@@ -87,28 +92,59 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<Status>('loading');
   const [game, setGame] = useState<GameState | null>(null);
   const [health, setHealth] = useState<HealthStatus>({ kind: 'ok', access: null });
+  const [unreadableSave, setUnreadableSave] = useState(false);
   const latest = useRef<GameState | null>(null);
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  // Bumped by Delete; a change queued before the delete is dropped instead of resurrecting it.
+  const generation = useRef(0);
 
-  const commit = useCallback(async (next: GameState) => {
-    latest.current = next;
-    setGame(next);
-    await saveGame(next);
-  }, []);
+  /**
+   * Every change to the game runs here, one at a time, against the latest state, so a slow
+   * health read can never overwrite a meal tapped meanwhile.
+   */
+  const update = useCallback(
+    <T,>(change: (current: GameState) => { state: GameState; result: T }): Promise<T | null> => {
+      const gen = generation.current;
+      const run = queue.current.then(async () => {
+        const current = latest.current;
+        if (!current || gen !== generation.current) return null;
+        const { state, result } = change(current);
+        if (state !== current) {
+          latest.current = state;
+          setGame(state);
+          await saveGame(state);
+        }
+        return result;
+      });
+      queue.current = run.catch(() => undefined);
+      return run;
+    },
+    [],
+  );
 
   const refresh = useCallback(async () => {
-    const current = latest.current;
-    if (!current) return;
-    let next = advanceToNow(current, Date.now(), gameConfig);
-    const [movement, healthNow] = await Promise.all([readMovement(next), readHealth()]);
-    setHealth(healthNow);
-    next = syncMovement(next, movement, gameConfig);
-    if (next !== current) await commit(next);
-  }, [commit]);
+    const snapshot = latest.current;
+    if (!snapshot) return;
+    try {
+      const [movement, healthNow] = await Promise.all([readMovement(snapshot), readHealth()]);
+      setHealth(healthNow);
+      await update((current) => {
+        // Credit yesterday's late steps before the day rolls over, so the new day sees the
+        // real result (a goal day, zoomies, the weekly goal), then credit today.
+        let next = syncMovement(current, movement, gameConfig);
+        next = advanceToNow(next, Date.now(), gameConfig);
+        next = syncMovement(next, movement, gameConfig);
+        return { state: next, result: undefined };
+      });
+    } catch {
+      // A failed refresh leaves the saved game untouched; the next foreground tries again.
+    }
+  }, [update]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const result = await loadGame();
+      const result = await loadGame().catch(() => ({ kind: 'empty' }) as const);
       if (cancelled) return;
       if (result.kind === 'loaded') {
         latest.current = result.state;
@@ -116,6 +152,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setStatus('ready');
         await refresh();
       } else {
+        setUnreadableSave(result.kind === 'unreadable');
         setStatus('needs-adoption');
       }
     })();
@@ -139,41 +176,62 @@ export function GameProvider({ children }: { children: ReactNode }) {
         },
         gameConfig,
       );
-      await commit(adopted);
+      await saveGame(adopted);
+      latest.current = adopted;
+      setGame(adopted);
+      setUnreadableSave(false);
       setStatus('ready');
       await refresh();
     },
-    [commit, refresh],
+    [refresh],
   );
 
   const care = useCallback<GameContextValue['care']>(
     async (action) => {
-      const current = latest.current;
-      if (!current) return { ok: false, reason: 'noGame' };
-      const outcome = act(current, action, gameConfig);
-      if (outcome.ok) await commit(outcome.state);
-      return outcome;
+      const outcome = await update((current) => {
+        // The app may have stayed open past midnight: start the new day before acting.
+        const today = advanceToNow(current, Date.now(), gameConfig);
+        const result = act(today, action, gameConfig);
+        return { state: result.ok ? result.state : today, result };
+      });
+      return outcome ?? { ok: false, reason: 'noGame' };
     },
-    [commit],
+    [update],
   );
 
   const setResting = useCallback(
     async (on: boolean) => {
-      if (latest.current) await commit(setRestMode(latest.current, on));
+      await update((current) => ({
+        state: setRestMode(advanceToNow(current, Date.now(), gameConfig), on),
+        result: undefined,
+      }));
     },
-    [commit],
+    [update],
   );
 
   const deleteEverything = useCallback(async () => {
+    generation.current += 1;
+    await queue.current;
     await deleteAllData();
     latest.current = null;
     setGame(null);
+    setUnreadableSave(false);
     setStatus('needs-adoption');
   }, []);
 
   return (
     <GameContext.Provider
-      value={{ status, game, health, adoptPet, care, setResting, refresh, deleteEverything }}
+      value={{
+        status,
+        game,
+        health,
+        unreadableSave,
+        adoptPet,
+        care,
+        setResting,
+        refresh,
+        deleteEverything,
+      }}
     >
       {children}
     </GameContext.Provider>

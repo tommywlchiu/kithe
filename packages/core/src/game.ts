@@ -151,7 +151,8 @@ function writeDiary(
   }
 }
 
-function currentTrick(state: GameState, config: GameConfig): string | undefined {
+/** The first trick not yet learned, or undefined when all are learned. */
+export function currentTrick(state: GameState, config: GameConfig): string | undefined {
   return Object.keys(config.care.tricks).find((id) => !trickLearned(state.care, id, config.care));
 }
 
@@ -271,6 +272,7 @@ export function syncMovement(
     if (!counts || day.date < oldest) return day;
     const progress = dailyProgress(counts, day.goal);
     const earned = dailyEarnings(progress, config.earnings);
+    if (progress <= day.progress && earned <= day.earned) return day;
     const delta = earned - day.earned;
     if (delta > 0) ledger = [...ledger, credit(day.date, delta, { kind: 'movement' })];
     return {
@@ -279,7 +281,8 @@ export function syncMovement(
       earned: Math.max(day.earned, earned),
     };
   });
-  return { ...state, days, care: { ...state.care, ledger } };
+  const changed = days.some((d, i) => d !== state.days[i]);
+  return changed ? { ...state, days, care: { ...state.care, ledger } } : state;
 }
 
 export type ActOutcome =

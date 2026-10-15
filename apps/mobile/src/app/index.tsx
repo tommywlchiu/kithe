@@ -1,5 +1,5 @@
 import { careConfig, gameConfig, items } from '@kithe/content';
-import { type CareAction, trickLearned, view } from '@kithe/core';
+import { type CareAction, currentTrick, view } from '@kithe/core';
 import { Link, Redirect } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -18,7 +18,7 @@ import { Button } from '../ui/Button';
 import { PupArt, type PupPose } from '../ui/PupArt';
 import { colors, radius, space } from '../ui/theme';
 
-const TRICK = Object.keys(careConfig.tricks)[0] ?? 'sit';
+const trickName = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 
 const thanks: Record<CareAction['type'], string> = {
   meal: 'Crunch crunch. Thank you!',
@@ -54,7 +54,7 @@ export default function Home() {
   const name = game.pet.name;
   const progress = Math.min(1, v.today.progress);
   const usableToy = game.care.toys.find((t) => t.wearDaysLeft > 0);
-  const learned = trickLearned(game.care, TRICK, careConfig);
+  const trick = currentTrick(game, gameConfig);
 
   const doCare = async (action: CareAction) => {
     const outcome = await care(action);
@@ -145,11 +145,11 @@ export default function Home() {
             onPress={() => doCare({ type: 'treat' })}
           />
           <CareTile
-            label={learned ? 'Sit: learned' : 'Train'}
-            detail={learned ? 'Good pup' : `${careConfig.prices.trainingSession}`}
-            hint={`Practice ${TRICK} with ${name}`}
-            disabled={learned}
-            onPress={() => doCare({ type: 'trainingSession', trickId: TRICK })}
+            label={trick ? `Train: ${trickName(trick)}` : 'All tricks learned'}
+            detail={trick ? `${careConfig.prices.trainingSession}` : 'Good pup'}
+            hint={trick ? `Practice ${trick} with ${name}` : `${name} knows every trick`}
+            disabled={!trick}
+            onPress={() => trick && doCare({ type: 'trainingSession', trickId: trick })}
           />
           <CareTile
             label="Shop"
