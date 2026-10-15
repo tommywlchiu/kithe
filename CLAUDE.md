@@ -25,7 +25,7 @@ A cozy dog-raising game for iPhone and Android where real-life movement is the o
 - `npm run typecheck`, `npm run lint`, `npm run format`, `npm run format:check`.
 - `npm test` runs vitest across packages and scripts.
 - `npm run sim` runs `scripts/economy-sim.ts`.
-- `npm run mobile` starts the Expo dev server; `npm run android` builds and launches the Android dev build (`expo run:android`).
+- `npm run mobile` starts the Expo dev server; `npm run android` builds and launches the Android dev build (`expo run:android`). After native changes (new modules, app.config.ts), run `APP_VARIANT=development npx expo prebuild --platform android --no-install` in `apps/mobile` first; letting `run:android` regenerate the folders itself has failed mid-build twice.
 - `npx expo-doctor` in `apps/mobile` checks dependencies and config.
 - iOS builds: `npx eas-cli build --profile development --platform ios` from `apps/mobile` (cloud; needs the Apple Developer account).
 - Local Android builds need JDK 17 (`C:\Users\tommy\Java\jdk-17.0.20.1+1`) and the dev caches on E: because C: is full: `ANDROID_HOME=E:\dev\Android\sdk`, `ANDROID_AVD_HOME=E:\dev\Android\avd`, `GRADLE_USER_HOME=E:\dev\gradle`, with `%ANDROID_HOME%\platform-tools` and `%ANDROID_HOME%\emulator` on `PATH`. `ORG_GRADLE_PROJECT_reactNativeArchitectures=x86_64,arm64-v8a` limits local builds to the emulator and phone ABIs; EAS builds ignore it and ship all ABIs.

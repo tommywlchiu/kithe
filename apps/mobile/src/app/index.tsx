@@ -81,7 +81,9 @@ export default function Home() {
             {name}
           </Text>
           <Text style={styles.meta}>
-            {v.daysTogether === 0 ? 'Our first day' : `${v.daysTogether} days together`}
+            {v.daysTogether === 0
+              ? 'Our first day'
+              : `${v.daysTogether} ${v.daysTogether === 1 ? 'day' : 'days'} together`}
             {game.restMode ? ' · Resting' : ''}
           </Text>
         </View>
@@ -130,7 +132,7 @@ export default function Home() {
           />
           <CareTile
             label="Toys"
-            detail={usableToy ? 'Play' : 'Shop'}
+            detail={usableToy ? 'Play' : 'Pick one'}
             hint={usableToy ? `Play with ${name}` : 'Open the toy shop'}
             onPress={() =>
               usableToy ? doCare({ type: 'play', toyId: usableToy.toyId }) : setShopOpen(true)
