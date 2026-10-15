@@ -19,7 +19,9 @@
     "test": "vitest run",
     "sim": "npm run sim --workspace @kithe/scripts",
     "mobile": "npm run start --workspace @kithe/mobile",
-    "android": "npm run android --workspace @kithe/mobile"
+    "android": "npm run android --workspace @kithe/mobile",
+    "pups": "node scripts/sync-pup-images.mjs",
+    "pups:generate": "node scripts/gen-pup-art.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
