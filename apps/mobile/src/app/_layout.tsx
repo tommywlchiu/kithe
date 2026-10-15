@@ -12,9 +12,16 @@ import { colors, space } from '../ui/theme';
 
 installErrorTracking();
 
+let lastHandled: string | null = null;
+
+/** Each tap opens the diary once, whether it arrives as the launch response or as an event. */
 function openFromNotification(response: Notifications.NotificationResponse | null) {
-  const url = response?.notification.request.content.data?.url;
-  if (typeof url === 'string' && url === '/diary') {
+  if (!response) return;
+  Notifications.clearLastNotificationResponse();
+  const tap = `${response.notification.request.identifier}@${response.notification.date}`;
+  if (tap === lastHandled) return;
+  lastHandled = tap;
+  if (response.notification.request.content.data?.url === '/diary') {
     track('notification_opened');
     router.push('/diary');
   }
@@ -22,7 +29,7 @@ function openFromNotification(response: Notifications.NotificationResponse | nul
 
 export default function RootLayout() {
   useEffect(() => {
-    void Notifications.getLastNotificationResponseAsync().then(openFromNotification);
+    openFromNotification(Notifications.getLastNotificationResponse());
     const sub = Notifications.addNotificationResponseReceivedListener(openFromNotification);
     return () => sub.remove();
   }, []);

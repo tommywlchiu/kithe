@@ -42,9 +42,12 @@ export async function saveGame(state: GameState): Promise<void> {
   await Storage.setItemAsync(KEY, JSON.stringify(state));
 }
 
-/** Settings > Delete my data. Also clears any set-aside saves. */
+/**
+ * Settings > Delete my data. Clears every Kithe key: the save, set-aside saves, the analytics
+ * install id, and the notification prompt flag.
+ */
 export async function deleteAllData(): Promise<void> {
   for (const key of Storage.getAllKeysSync()) {
-    if (key.startsWith(KEY)) Storage.removeItemSync(key);
+    if (key.startsWith('kithe.')) Storage.removeItemSync(key);
   }
 }

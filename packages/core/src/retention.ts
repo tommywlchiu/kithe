@@ -11,14 +11,17 @@ export type FirstWeekRecap = {
 };
 
 const FIRST_WEEK = 7;
+/** The card stays up for a week, well before day history is trimmed. */
+const LAST_RECAP_DAY = 14;
 
 /**
- * The "Our first week" card, available from the 7th day after adoption. Counts goal days in
- * the first 7, the day with the most movement, and the most detailed diary line of the week.
+ * The "Our first week" card, shown from day 7 to day 14. Counts goal days in the first 7,
+ * the day with the most movement, and the most detailed diary line of the week. Days together
+ * is the calendar week, never a tally that Rest Mode could shrink.
  */
 export function firstWeekRecap(state: GameState): FirstWeekRecap | null {
   const dayNumber = daysBetween(state.pet.adoptedOn, state.clock.lastDay) + 1;
-  if (dayNumber < FIRST_WEEK) return null;
+  if (dayNumber < FIRST_WEEK || dayNumber > LAST_RECAP_DAY) return null;
   const lastFirstWeekDay = addDays(state.pet.adoptedOn, FIRST_WEEK - 1);
   const week = state.days.filter((d) => d.date <= lastFirstWeekDay);
   const best = week.reduce<(typeof week)[number] | undefined>(
@@ -31,7 +34,7 @@ export function firstWeekRecap(state: GameState): FirstWeekRecap | null {
     undefined,
   );
   return {
-    daysTogether: Math.min(state.daysTogether, FIRST_WEEK),
+    daysTogether: FIRST_WEEK,
     goalDays: week.filter((d) => d.progress >= 1).length,
     ...(best ? { bestWalkDate: best.date } : {}),
     ...(bestLine ? { bestLine } : {}),

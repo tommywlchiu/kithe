@@ -41,6 +41,40 @@ export function daysBetween(from: IsoDate, to: IsoDate): number {
   return Math.round((toUtc(to) - toUtc(from)) / DAY_MS);
 }
 
+const hourFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/** Minutes the zone is ahead of UTC at an instant. */
+function zoneOffsetMinutes(ms: number, timeZone: string): number {
+  let format = hourFormatters.get(timeZone);
+  if (!format) {
+    format = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    hourFormatters.set(timeZone, format);
+  }
+  const parts = format.formatToParts(new Date(ms));
+  const get = (type: string) => Number(parts.find((p) => p.type === type)!.value);
+  const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'));
+  return Math.round((asUtc - Math.floor(ms / 60_000) * 60_000) / 60_000);
+}
+
+/**
+ * The instant a wall-clock hour happens on a date in a time zone. Kithe only asks for
+ * daytime hours, which daylight-saving jumps never skip.
+ */
+export function instantAt(date: IsoDate, hour: number, timeZone: string): number {
+  const wall = toUtc(date) + hour * 3_600_000;
+  let ms = wall - zoneOffsetMinutes(wall, timeZone) * 60_000;
+  ms = wall - zoneOffsetMinutes(ms, timeZone) * 60_000;
+  return ms;
+}
+
 export type Clock = {
   /** The last local day already processed. */
   lastDay: IsoDate;

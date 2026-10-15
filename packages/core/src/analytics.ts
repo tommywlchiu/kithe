@@ -14,7 +14,8 @@ const ALLOWED = {
   notification_opened: [],
   notification_time_set: ['slot'],
   feedback_opened: ['from'],
-  $exception: ['$exception_message', '$exception_type'],
+  // Error type only: a free-text message could carry a name or a health value.
+  $exception: ['$exception_type'],
 } as const satisfies Record<string, readonly string[]>;
 
 export type AnalyticsEventName = keyof typeof ALLOWED;

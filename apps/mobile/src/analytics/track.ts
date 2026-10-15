@@ -36,6 +36,12 @@ function ensureId(): string {
   return installId;
 }
 
+/** Forgets the install id, so a fresh adoption after Delete counts as a new install. */
+export function resetTrackingId(): void {
+  installId = null;
+  queue = [];
+}
+
 /** Keeps install_day current; call whenever the game state changes. */
 export function setTrackingContext(game: GameState | null): void {
   if (!game) return;
@@ -75,16 +81,13 @@ export function track(event: AnalyticsEventName, props: Record<string, unknown> 
   if (!timer) timer = setTimeout(() => void flush(), 5000);
 }
 
-/** Uncaught JavaScript errors become $exception events (message and type only). */
+/** Uncaught JavaScript errors become $exception events carrying the error type only. */
 export function installErrorTracking(): void {
   const handler = (globalThis as { ErrorUtils?: ErrorUtilsLike }).ErrorUtils;
   if (!handler) return;
   const previous = handler.getGlobalHandler();
   handler.setGlobalHandler((error, isFatal) => {
-    track('$exception', {
-      $exception_message: error instanceof Error ? error.message : String(error),
-      $exception_type: error instanceof Error ? error.name : 'Error',
-    });
+    track('$exception', { $exception_type: error instanceof Error ? error.name : 'Error' });
     void flush();
     previous(error, isFatal);
   });

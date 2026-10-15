@@ -40,7 +40,7 @@ const refusals: Record<string, string> = {
 };
 
 export default function Home() {
-  const { status, game, health, care, refresh } = useGame();
+  const { status, game, health, care, refresh, setNotificationHour } = useGame();
   const [pose, setPose] = useState<PupPose | null>(null);
   const [message, setMessage] = useState('');
   const [shopOpen, setShopOpen] = useState(false);
@@ -51,7 +51,8 @@ export default function Home() {
     if (status !== 'ready' || !petName || Storage.getItemSync(ASKED_KEY)) return;
     Storage.setItemSync(ASKED_KEY, '1');
     Alert.alert(`A note from ${petName}`, 'May I send you one cozy note a day?', [
-      { text: 'Not now', style: 'cancel' },
+      // Off until chosen in Settings: declining here must mean no notes on any phone.
+      { text: 'Not now', style: 'cancel', onPress: () => void setNotificationHour(null) },
       {
         text: 'Yes',
         onPress: async () => {
@@ -60,7 +61,7 @@ export default function Home() {
         },
       },
     ]);
-  }, [status, petName, refresh]);
+  }, [status, petName, refresh, setNotificationHour]);
 
   if (status === 'loading') {
     return (

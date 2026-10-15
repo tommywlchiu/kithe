@@ -63,7 +63,7 @@ describe('firstWeekRecap', () => {
       }),
     );
     expect(recap).toEqual({
-      daysTogether: 6,
+      daysTogether: 7,
       goalDays: 3,
       bestWalkDate: '2026-10-03',
       bestLine: 'We found a pinecone on our long walk.',
@@ -72,9 +72,20 @@ describe('firstWeekRecap', () => {
 
   it('works for a quiet first week with no walks', () => {
     expect(firstWeekRecap(base({ days: [day('2026-10-01', 0)] }))).toEqual({
-      daysTogether: 6,
+      daysTogether: 7,
       goalDays: 0,
     });
+  });
+
+  it('says 7 days together even after a week of Rest Mode', () => {
+    expect(firstWeekRecap(base({ daysTogether: 0, restMode: true }))?.daysTogether).toBe(7);
+  });
+
+  it('is shown through day 14, then steps aside', () => {
+    const on = (lastDay: string) =>
+      firstWeekRecap(base({ clock: { lastDay, homeTimeZone: 'UTC' } }));
+    expect(on('2026-10-14')).not.toBeNull();
+    expect(on('2026-10-15')).toBeNull();
   });
 });
 

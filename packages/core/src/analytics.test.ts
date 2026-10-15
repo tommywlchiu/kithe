@@ -44,8 +44,18 @@ describe('buildEvent', () => {
     expect(properties).not.toHaveProperty('action');
   });
 
-  it('truncates long strings such as error messages', () => {
-    const { properties } = buildEvent('$exception', { $exception_message: 'x'.repeat(2000) }, CTX);
-    expect(String(properties.$exception_message).length).toBe(500);
+  it('truncates long strings', () => {
+    const { properties } = buildEvent('care_action', { action: 'x'.repeat(2000) }, CTX);
+    expect(String(properties.action).length).toBe(500);
+  });
+
+  it('never sends an error message, which could hold a name or a health value', () => {
+    const { properties } = buildEvent(
+      '$exception',
+      { $exception_message: 'Biscuit: 8,412 steps', $exception_type: 'RangeError' },
+      CTX,
+    );
+    expect(properties).not.toHaveProperty('$exception_message');
+    expect(properties.$exception_type).toBe('RangeError');
   });
 });

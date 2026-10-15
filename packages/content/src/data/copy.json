@@ -14,7 +14,7 @@
       { "id": "rainWatch", "text": "{name} wants to watch the rain with you." },
       { "id": "squirrelStory", "text": "{name} has a story about a squirrel." },
       { "id": "sitPractice", "text": "{name} has been practicing sit. Want to see?" },
-      { "id": "tailWag", "text": "{name} wagged their tail just thinking about you." }
+      { "id": "rugSpot", "text": "{name} found the comfiest spot on the rug." }
     ]
   }
 }

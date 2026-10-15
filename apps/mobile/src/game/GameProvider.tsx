@@ -27,9 +27,9 @@ import {
 } from 'react';
 import { AppState } from 'react-native';
 
-import { setTrackingContext, track } from '../analytics/track';
+import { resetTrackingId, setTrackingContext, track } from '../analytics/track';
 import { movementSource } from '../movement/movementSource';
-import { rescheduleDaily } from '../notifications/schedule';
+import { cancelAllNotes, rescheduleDaily } from '../notifications/schedule';
 import { deleteAllData, loadGame, saveGame } from '../storage/save';
 
 export type HealthStatus =
@@ -131,7 +131,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const snapshot = latest.current;
     if (!snapshot) return;
     setTrackingContext(snapshot);
-    track('app_opened');
     try {
       const [movement, healthNow] = await Promise.all([readMovement(snapshot), readHealth()]);
       setHealth(healthNow);
@@ -159,6 +158,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         latest.current = result.state;
         setGame(result.state);
         setStatus('ready');
+        setTrackingContext(result.state);
+        track('app_opened');
         await refresh();
       } else {
         setUnreadableSave(result.kind === 'unreadable');
@@ -166,7 +167,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
     })();
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') void refresh();
+      if (state !== 'active') return;
+      if (latest.current) track('app_opened');
+      void refresh();
     });
     return () => {
       cancelled = true;
@@ -245,6 +248,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     generation.current += 1;
     await queue.current;
     await deleteAllData();
+    resetTrackingId();
+    await cancelAllNotes().catch(() => undefined);
     latest.current = null;
     setGame(null);
     setUnreadableSave(false);

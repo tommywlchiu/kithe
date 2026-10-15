@@ -66,6 +66,7 @@ export type { Mood, Needs, NeedsConfig } from './needs';
 export {
   addDays,
   daysBetween,
+  instantAt,
   isValidTimeZone,
   localDate,
   MAX_CATCH_UP_DAYS,
