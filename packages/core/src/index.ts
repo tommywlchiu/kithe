@@ -74,6 +74,7 @@ export {
   seededRandom,
 } from './time';
 export type { Clock } from './time';
+export { scrubNumbers } from './privacy';
 export { balance, credit, debit } from './wallet';
 export type { CreditReason, DebitReason, LedgerEntry } from './wallet';
 export { firstWeekRecap, planNotifications } from './retention';

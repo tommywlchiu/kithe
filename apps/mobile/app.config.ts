@@ -53,6 +53,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     'expo-sqlite',
     'expo-notifications',
+    [
+      '@sentry/react-native/expo',
+      { url: 'https://sentry.io/', organization: 'marque-studio', project: 'react-native' },
+    ],
     'react-native-health-connect',
     [
       '@kingstinct/react-native-healthkit',
@@ -80,6 +84,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // PostHog project key: public and write-only (it can send events, never read them).
     posthogKey: 'phc_ABsmcDCgCgDD6z58eLJcXvcbEUMLKDGFXoyUFkgLf7pq',
     posthogHost: 'https://us.i.posthog.com',
+    // Sentry DSN: public and send-only (it can report crashes, never read them).
+    sentryDsn:
+      'https://0382315851e4052e3d92bf99da0be186@o4512258533687296.ingest.us.sentry.io/4512258535718912',
   },
   experiments: {
     typedRoutes: true,

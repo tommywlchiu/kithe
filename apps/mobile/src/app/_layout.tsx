@@ -4,12 +4,15 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { installCrashReporting, reportCrash, wrapRoot } from '../analytics/crashes';
 import { installErrorTracking, track } from '../analytics/track';
 import { tellTommy } from '../feedback/tellTommy';
 import { GameProvider } from '../game/GameProvider';
 import { Button } from '../ui/Button';
 import { colors, space } from '../ui/theme';
 
+// Sentry first, so the analytics handler wraps it and both see an uncaught error.
+installCrashReporting();
 installErrorTracking();
 
 let lastHandled: string | null = null;
@@ -27,7 +30,7 @@ function openFromNotification(response: Notifications.NotificationResponse | nul
   }
 }
 
-export default function RootLayout() {
+function RootLayout() {
   useEffect(() => {
     openFromNotification(Notifications.getLastNotificationResponse());
     const sub = Notifications.addNotificationResponseReceivedListener(openFromNotification);
@@ -56,8 +59,15 @@ export default function RootLayout() {
   );
 }
 
+export default wrapRoot(RootLayout);
+
 /** Every error screen has one obvious next step, and Tommy is one tap away. */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    reportCrash(error);
+    track('$exception', { $exception_type: error.name });
+  }, [error]);
+
   return (
     <View style={styles.error}>
       <Text style={styles.title}>Oops, I tripped over my own paws.</Text>

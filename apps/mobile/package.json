@@ -13,6 +13,7 @@
     "@kingstinct/react-native-healthkit": "^16.2.0",
     "@kithe/content": "*",
     "@kithe/core": "*",
+    "@sentry/react-native": "~7.11.0",
     "expo": "~57.0.29",
     "expo-build-properties": "~57.0.22",
     "expo-constants": "~57.0.21",
