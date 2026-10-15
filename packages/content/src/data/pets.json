@@ -1,0 +1,10 @@
+{
+  "version": "0.1.0",
+  "breeds": [
+    { "id": "beagle", "name": "Beagle" },
+    { "id": "golden", "name": "Golden retriever" },
+    { "id": "corgi", "name": "Corgi" }
+  ],
+  "traitsPerPet": 2,
+  "adoptionNeeds": { "fullness": 80, "cleanliness": 80, "playfulness": 80, "energy": 100 }
+}

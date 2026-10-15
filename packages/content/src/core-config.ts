@@ -1,7 +1,9 @@
-import { diary, economy, events, items } from './parsed';
+import { diary, economy, events, items, pets } from './parsed';
 import { traitIds } from './schema/ids';
 import type {
   CareConfig,
+  EventReward,
+  GameConfig,
   DiaryLine,
   EarningsConfig,
   EventDef,
@@ -63,3 +65,21 @@ export const eventDefs: EventDef[] = events.events;
 export const starterKitPawprints: number = economy.earnings.starterKit;
 export const traitTags: readonly string[] = traitIds;
 export const diaryLines: readonly DiaryLine[] = diary.lines;
+
+export const gameConfig: GameConfig = {
+  earnings: earningsConfig,
+  goal: goalConfig,
+  growth: growthConfig,
+  care: careConfig,
+  events: eventDefs,
+  rewards: Object.fromEntries(
+    events.events.map((e): [string, EventReward] => [e.id, e.reward ?? null]),
+  ),
+  diary: diaryLines,
+  traitTags,
+  traitsPerPet: pets.traitsPerPet,
+  starterKit: starterKitPawprints,
+  adoptionNeeds: pets.adoptionNeeds,
+};
+
+export const breeds = pets.breeds;

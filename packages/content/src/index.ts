@@ -35,9 +35,13 @@ export type { Diary, DiaryLine, DiaryTag } from './schema/diary';
 export { bannedPhrasesSchema, copyLineSchema, copySchema } from './schema/copy';
 export type { BannedPhrases, Copy, CopyLine } from './schema/copy';
 export { compileBannedPhrases, findBannedPhrases } from './bannedPhrases';
-export { bannedPhrases, copy, diary, economy, events, items } from './parsed';
+export { bannedPhrases, copy, diary, economy, events, items, pets } from './parsed';
+export { petsSchema } from './schema/pets';
+export type { Pets } from './schema/pets';
 export {
+  breeds,
   careConfig,
+  gameConfig,
   diaryLines,
   earningsConfig,
   eventDefs,

@@ -4,11 +4,13 @@ import rawDiary from './data/diary.json';
 import rawEconomy from './data/economy.json';
 import rawEvents from './data/events.json';
 import rawItems from './data/items.json';
+import rawPets from './data/pets.json';
 import { bannedPhrasesSchema, copySchema } from './schema/copy';
 import { diarySchema } from './schema/diary';
 import { economySchema } from './schema/economy';
 import { eventsSchema } from './schema/events';
 import { itemsSchema } from './schema/items';
+import { petsSchema } from './schema/pets';
 
 export const economy = economySchema.parse(rawEconomy);
 export const items = itemsSchema.parse(rawItems);
@@ -16,3 +18,4 @@ export const events = eventsSchema.parse(rawEvents);
 export const diary = diarySchema.parse(rawDiary);
 export const copy = copySchema.parse(rawCopy);
 export const bannedPhrases = bannedPhrasesSchema.parse(rawBannedPhrases);
+export const pets = petsSchema.parse(rawPets);
