@@ -143,6 +143,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         next = syncMovement(next, movement, gameConfig);
         return { state: next, result: undefined };
       });
+      // Also covers returning from the system permission dialog.
+      if (latest.current) await rescheduleDaily(latest.current).catch(() => undefined);
     } catch {
       // A failed refresh leaves the saved game untouched; the next foreground tries again.
     }

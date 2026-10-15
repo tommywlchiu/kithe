@@ -37,7 +37,16 @@ export async function askForNotifications(): Promise<boolean> {
  * hour. Nothing is scheduled in Rest Mode, when turned off, or without permission. Safe to
  * call often: it always rebuilds from the game state, so it never doubles up.
  */
-export async function rescheduleDaily(game: GameState): Promise<number> {
+let pending: Promise<unknown> = Promise.resolve();
+
+export function rescheduleDaily(game: GameState): Promise<number> {
+  // Overlapping rebuilds would each cancel, then each add a week; run them one at a time.
+  const run = pending.then(() => rebuild(game));
+  pending = run.catch(() => undefined);
+  return run;
+}
+
+async function rebuild(game: GameState): Promise<number> {
   await Notifications.cancelAllScheduledNotificationsAsync();
   const hour = notifyHourOf(game);
   if (game.restMode || hour === null || !(await notificationsAllowed())) return 0;
@@ -49,6 +58,7 @@ export async function rescheduleDaily(game: GameState): Promise<number> {
     const at = new Date(y, m - 1, d, hour, 0, 0);
     if (at.getTime() <= now) continue;
     await Notifications.scheduleNotificationAsync({
+      identifier: `daily-${date}`,
       content: { title: game.pet.name, body: text, data: { url: '/diary' } },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,

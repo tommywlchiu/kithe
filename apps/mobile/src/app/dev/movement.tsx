@@ -96,8 +96,8 @@ function MovementSpikeScreen() {
 
       <Text style={styles.meta}>{message}</Text>
       <Text style={styles.text}>Scheduled notifications: {scheduled.length}</Text>
-      {scheduled.map((line) => (
-        <Text key={line} style={styles.meta}>
+      {scheduled.map((line, i) => (
+        <Text key={`${i}-${line}`} style={styles.meta}>
           {line}
         </Text>
       ))}

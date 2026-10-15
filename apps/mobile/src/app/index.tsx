@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useGame } from '../game/GameProvider';
-import { askForNotifications, rescheduleDaily } from '../notifications/schedule';
+import { askForNotifications } from '../notifications/schedule';
 import { Button } from '../ui/Button';
 import { PupArt, type PupPose } from '../ui/PupArt';
 import { colors, radius, space } from '../ui/theme';
@@ -40,7 +40,7 @@ const refusals: Record<string, string> = {
 };
 
 export default function Home() {
-  const { status, game, health, care } = useGame();
+  const { status, game, health, care, refresh } = useGame();
   const [pose, setPose] = useState<PupPose | null>(null);
   const [message, setMessage] = useState('');
   const [shopOpen, setShopOpen] = useState(false);
@@ -55,11 +55,12 @@ export default function Home() {
       {
         text: 'Yes',
         onPress: async () => {
-          if ((await askForNotifications()) && game) await rescheduleDaily(game);
+          await askForNotifications();
+          await refresh();
         },
       },
     ]);
-  }, [status, petName, game]);
+  }, [status, petName, refresh]);
 
   if (status === 'loading') {
     return (

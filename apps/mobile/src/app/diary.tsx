@@ -1,4 +1,4 @@
-import { firstWeekRecap } from '@kithe/core';
+import { type FirstWeekRecap, firstWeekRecap } from '@kithe/core';
 import { useEffect } from 'react';
 import { FlatList, Share, StyleSheet, Text, View } from 'react-native';
 
@@ -13,6 +13,15 @@ const formatDate = (iso: string) =>
     month: 'long',
     day: 'numeric',
   });
+
+// Celebrate goal days when there are some; never show a zero as a score.
+const weekStat = (recap: FirstWeekRecap, joiner = ', ') =>
+  [
+    `${recap.daysTogether} days together`,
+    recap.goalDays > 0 ? `${recap.goalDays} goal ${recap.goalDays === 1 ? 'day' : 'days'}` : null,
+  ]
+    .filter(Boolean)
+    .join(joiner);
 
 export default function Diary() {
   const { game } = useGame();
@@ -31,7 +40,7 @@ export default function Diary() {
   const share = async () => {
     if (!recap) return;
     const lines = [
-      `${name} and I: our first week. ${recap.daysTogether} days together, ${recap.goalDays} goal days.`,
+      `${name} and I: our first week. ${weekStat(recap)}.`,
       recap.bestLine ? `From ${name}'s diary: "${recap.bestLine}"` : null,
       'Kithe: a puppy that grows when you move.',
     ];
@@ -51,9 +60,7 @@ export default function Diary() {
             <Text style={styles.recapTitle} accessibilityRole="header">
               Our first week
             </Text>
-            <Text style={styles.recapStat}>
-              {recap.daysTogether} days together · {recap.goalDays} goal days
-            </Text>
+            <Text style={styles.recapStat}>{weekStat(recap, ' · ')}</Text>
             {recap.bestWalkDate ? (
               <Text style={styles.recapLine}>Favorite walk: {formatDate(recap.bestWalkDate)}</Text>
             ) : null}
