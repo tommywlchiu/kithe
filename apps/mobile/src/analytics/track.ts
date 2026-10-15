@@ -10,9 +10,10 @@ import Storage from 'expo-sqlite/kv-store';
 import { Platform } from 'react-native';
 
 // PostHog over plain HTTPS: its SDK pulls in native modules, and Phase 0 only needs capture.
-// The project key is public and write-only. With no key configured, tracking is off.
+// The project key is public and write-only. Development bundles never send, so emulator and
+// dev-client sessions stay out of the retention numbers; with no key, tracking is off too.
 const extra = (Constants.expoConfig?.extra ?? {}) as { posthogKey?: string; posthogHost?: string };
-const KEY = extra.posthogKey;
+const KEY = __DEV__ ? undefined : extra.posthogKey;
 const HOST = extra.posthogHost ?? 'https://us.i.posthog.com';
 const ID_KEY = 'kithe.analytics.id';
 
