@@ -77,6 +77,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   owner: 'tommywlchiu',
   extra: {
     eas: { projectId: 'b6321ccf-10a5-4606-be32-e8f1547d9b4a' },
+    // PostHog project key: public and write-only (it can send events, never read them).
+    posthogKey: 'phc_ABsmcDCgCgDD6z58eLJcXvcbEUMLKDGFXoyUFkgLf7pq',
+    posthogHost: 'https://us.i.posthog.com',
   },
   experiments: {
     typedRoutes: true,
