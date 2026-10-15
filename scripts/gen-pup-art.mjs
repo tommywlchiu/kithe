@@ -63,7 +63,10 @@ async function generate(breed, pose, outFile, referencePng, model) {
   const parts = [{ text: prompt }];
   if (referencePng) {
     parts.push({
-      inline_data: { mime_type: 'image/png', data: readFileSync(referencePng).toString('base64') },
+      inline_data: {
+        mime_type: /\.jpe?g$/i.test(referencePng) ? 'image/jpeg' : 'image/png',
+        data: readFileSync(referencePng).toString('base64'),
+      },
     });
   }
   const res = await fetch(`${API}/${model}:generateContent`, {
@@ -79,9 +82,13 @@ async function generate(breed, pose, outFile, referencePng, model) {
   const image = body.candidates?.[0]?.content?.parts?.find((p) => p.inlineData || p.inline_data);
   const data = image?.inlineData?.data ?? image?.inline_data?.data;
   if (!data) throw new Error(`no image returned: ${JSON.stringify(body).slice(0, 300)}`);
-  mkdirSync(dirname(outFile), { recursive: true });
-  writeFileSync(outFile, Buffer.from(data, 'base64'));
-  console.log(`saved ${outFile}`);
+  // Gemini may answer with JPEG even when asked for PNG; name the file after what came back,
+  // because Android release builds reject an image whose extension lies.
+  const mime = image?.inlineData?.mimeType ?? image?.inline_data?.mime_type ?? 'image/png';
+  const saved = outFile.replace(/\.(png|jpe?g)$/i, mime === 'image/jpeg' ? '.jpg' : '.png');
+  mkdirSync(dirname(saved), { recursive: true });
+  writeFileSync(saved, Buffer.from(data, 'base64'));
+  console.log(`saved ${saved}`);
 }
 
 const [cmd, ...args] = process.argv.slice(2);

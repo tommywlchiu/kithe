@@ -1,4 +1,4 @@
-// Regenerates apps/mobile/src/ui/pupImages.ts from the PNGs in apps/mobile/assets/pups/.
+// Regenerates apps/mobile/src/ui/pupImages.ts from the images in apps/mobile/assets/pups/.
 // Metro needs literal require() calls, so the map is written out by hand-free codegen.
 // Run: npm run pups
 import { readdirSync, writeFileSync } from 'node:fs';
@@ -13,12 +13,15 @@ const BREEDS = ['beagle', 'golden', 'corgi'];
 const POSES = ['thriving', 'content', 'mopey', 'sleeping', 'eating'];
 const expected = BREEDS.flatMap((b) => POSES.map((p) => `${b}-${p}`));
 
-const files = readdirSync(dir).filter((f) => f.toLowerCase().endsWith('.png'));
-const found = expected.filter((key) => files.includes(`${key}.png`));
-const unknown = files.filter((f) => !expected.includes(f.replace(/\.png$/i, '')));
+// The extension must match the bytes: Android release builds reject a JPEG named .png.
+const IMAGE = /\.(png|jpe?g)$/i;
+const files = readdirSync(dir).filter((f) => IMAGE.test(f));
+const fileFor = (key) => files.find((f) => f.replace(IMAGE, '') === key);
+const found = expected.filter((key) => fileFor(key));
+const unknown = files.filter((f) => !expected.includes(f.replace(IMAGE, '')));
 
 const entries = found
-  .map((key) => `  '${key}': require('../../assets/pups/${key}.png'),`)
+  .map((key) => `  '${key}': require('../../assets/pups/${fileFor(key)}'),`)
   .join('\n');
 
 writeFileSync(
