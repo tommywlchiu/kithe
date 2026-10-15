@@ -51,6 +51,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         imageWidth: 76,
       },
     ],
+    'expo-sqlite',
+    'expo-notifications',
     'react-native-health-connect',
     [
       '@kingstinct/react-native-healthkit',
