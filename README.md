@@ -2,7 +2,7 @@
 
 A cozy dog-raising game for iPhone and Android where real-life movement is the only way to care for your pup. Money buys outfits, never care.
 
-Product and engineering docs live in `docs/`. Start with `CLAUDE.md`, `SCOPE.md`, and `docs/specs/`.
+The product docs (design doc, scope, specs, decisions) are private and not part of this repo.
 
 ## Prerequisites
 
@@ -34,4 +34,3 @@ npm ci
 - `packages/core` — pure TypeScript game rules; no React, no platform imports
 - `packages/content` — schema-validated data: economy, items, events, copy
 - `scripts/` — simulations and Claude Code hooks
-- `docs/` — design doc, specs, decisions

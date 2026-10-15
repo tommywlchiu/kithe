@@ -3,7 +3,8 @@
 A cozy dog-raising game for iPhone and Android where real-life movement is the only way to care for your pup. Money buys outfits, never care.
 
 ## Read first
-- Scope (locked): @SCOPE.md
+- Scope (locked): @docs/SCOPE.md
+- `docs/` is its own private repo (`tommywlchiu/kithe-docs`), ignored by this public one: commit doc changes there, never here.
 - Expo rules for the app workspace: @apps/mobile/AGENTS.md
 - Current milestone: `docs/specs/phase-0-concept-art-prototype.md` (read the section your task names; task IDs T1 to T17 live there)
 - Decisions: `docs/decisions/` (one dated file per decision; check it before asking Tommy to re-decide anything)
@@ -35,7 +36,7 @@ A cozy dog-raising game for iPhone and Android where real-life movement is the o
 - `packages/core` — `@kithe/core`: pure TypeScript game rules; no React, no platform types; fully unit-tested
 - `packages/content` — `@kithe/content`: zod-validated data (`src/data/*.json`, schemas in `src/schema/`)
 - `scripts/` — `@kithe/scripts`: `economy-sim.ts` and the Claude Code hooks in `scripts/hooks/`
-- `docs/` — design doc, specs, decisions
+- `docs/` — design doc, scope, specs, decisions; a separate private repo, git-ignored here
 - `web/` — static landing page and waitlist (plain HTML/CSS/JS, no build), live at https://kithe-dusky.vercel.app; deploy with `npx vercel@latest deploy --prod` from `web/` (Vercel account marqueofficialhq-5849, project `kithe`)
 - `backend/supabase/migrations/` — SQL run by hand in the Supabase SQL Editor (project `gmrktteafiuejkaeewrb`); the public key may only call `join_waitlist` and `answer_waitlist`, never touch tables
 

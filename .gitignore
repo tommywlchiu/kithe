@@ -57,3 +57,7 @@ yarn-error.*
 
 # Source PDFs live outside the repo; the Markdown versions in docs/ are canonical
 *.pdf
+
+# Product docs (design doc, scope, specs, decisions) are a separate private repo
+# (tommywlchiu/kithe-docs), cloned into docs/ for local work.
+/docs/
