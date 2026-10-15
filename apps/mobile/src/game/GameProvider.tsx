@@ -11,6 +11,8 @@ import {
   lastNDates,
   localDate,
   type MovementAccess,
+  notifyHourOf,
+  setNotifyHour,
   setRestMode,
   syncMovement,
 } from '@kithe/core';
@@ -25,7 +27,9 @@ import {
 } from 'react';
 import { AppState } from 'react-native';
 
+import { setTrackingContext, track } from '../analytics/track';
 import { movementSource } from '../movement/movementSource';
+import { rescheduleDaily } from '../notifications/schedule';
 import { deleteAllData, loadGame, saveGame } from '../storage/save';
 
 export type HealthStatus =
@@ -45,6 +49,7 @@ type GameContextValue = {
   adoptPet: (input: Omit<AdoptInput, 'nowMs' | 'seed' | 'timeZone'>) => Promise<void>;
   care: (action: CareAction) => Promise<ActOutcome>;
   setResting: (on: boolean) => Promise<void>;
+  setNotificationHour: (hour: number | null) => Promise<void>;
   refresh: () => Promise<void>;
   deleteEverything: () => Promise<void>;
 };
@@ -125,6 +130,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     const snapshot = latest.current;
     if (!snapshot) return;
+    setTrackingContext(snapshot);
+    track('app_opened');
     try {
       const [movement, healthNow] = await Promise.all([readMovement(snapshot), readHealth()]);
       setHealth(healthNow);
@@ -177,6 +184,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         gameConfig,
       );
       await saveGame(adopted);
+      setTrackingContext(adopted);
+      track('app_installed');
       latest.current = adopted;
       setGame(adopted);
       setUnreadableSave(false);
@@ -194,6 +203,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const result = act(today, action, gameConfig);
         return { state: result.ok ? result.state : today, result };
       });
+      if (outcome?.ok) track('care_action', { action: action.type });
       return outcome ?? { ok: false, reason: 'noGame' };
     },
     [update],
@@ -205,9 +215,29 @@ export function GameProvider({ children }: { children: ReactNode }) {
         state: setRestMode(advanceToNow(current, Date.now(), gameConfig), on),
         result: undefined,
       }));
+      track('rest_mode_toggled', { on });
     },
     [update],
   );
+
+  const setNotificationHour = useCallback(
+    async (hour: number | null) => {
+      await update((current) => ({ state: setNotifyHour(current, hour), result: undefined }));
+      track('notification_time_set', { slot: hour === null ? 'off' : String(hour) });
+    },
+    [update],
+  );
+
+  // Keep a week of good-news notifications scheduled; rebuild when anything they depend on changes.
+  const lastDay = game?.clock.lastDay;
+  const resting = game?.restMode;
+  const hour = game ? notifyHourOf(game) : undefined;
+  useEffect(() => {
+    const current = latest.current;
+    if (!current) return;
+    setTrackingContext(current);
+    rescheduleDaily(current).catch(() => undefined);
+  }, [lastDay, resting, hour]);
 
   const deleteEverything = useCallback(async () => {
     generation.current += 1;
@@ -229,6 +259,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         adoptPet,
         care,
         setResting,
+        setNotificationHour,
         refresh,
         deleteEverything,
       }}

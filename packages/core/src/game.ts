@@ -60,6 +60,8 @@ export type GameState = {
   pendingManualGoal?: MovementGoal;
   daysTogether: number;
   restMode: boolean;
+  /** Local hour (0 to 23) for the daily notification; null turns it off; absent means 9. */
+  notifyHour?: number | null;
   events: EventHistory;
   diary: readonly DiaryEntry[];
   /** Recent days, oldest first; movement can still sync into the last 7. */
@@ -312,6 +314,19 @@ export function act(state: GameState, action: CareAction, config: GameConfig): A
     i === next.days.length - 1 ? { ...d, events: [...d.events, ...scheduled.fired] } : d,
   );
   return { ok: true, state: { ...next, days }, fired: scheduled.fired };
+}
+
+export const DEFAULT_NOTIFY_HOUR = 9;
+
+export function notifyHourOf(state: GameState): number | null {
+  return state.notifyHour === undefined ? DEFAULT_NOTIFY_HOUR : state.notifyHour;
+}
+
+export function setNotifyHour(state: GameState, hour: number | null): GameState {
+  if (hour !== null && (!Number.isInteger(hour) || hour < 0 || hour > 23)) {
+    throw new RangeError(`notification hour must be 0 to 23, got ${hour}`);
+  }
+  return { ...state, notifyHour: hour };
 }
 
 export function setRestMode(state: GameState, on: boolean): GameState {

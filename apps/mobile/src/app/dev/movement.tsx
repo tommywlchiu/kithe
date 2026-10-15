@@ -1,4 +1,5 @@
 import { type DayMovement, lastNDates, type MovementAccess } from '@kithe/core';
+import * as Notifications from 'expo-notifications';
 import { Redirect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -18,6 +19,7 @@ function MovementSpikeScreen() {
   const [days, setDays] = useState<DayMovement[]>([]);
   const [readMs, setReadMs] = useState<number | null>(null);
   const [message, setMessage] = useState('');
+  const [scheduled, setScheduled] = useState<string[]>([]);
 
   const read = useCallback(async () => {
     if (!movementSource) return;
@@ -27,6 +29,17 @@ function MovementSpikeScreen() {
   }, []);
 
   useEffect(() => {
+    Notifications.getAllScheduledNotificationsAsync()
+      .then((all) =>
+        setScheduled(
+          all.map((n) => {
+            const t = n.trigger as { value?: number; date?: number } | null;
+            const at = t?.value ?? t?.date;
+            return `${at ? new Date(at).toLocaleString() : '?'}: ${n.content.body ?? ''}`;
+          }),
+        ),
+      )
+      .catch(() => setScheduled([]));
     movementSource
       ?.availability()
       .then(setAvailability)
@@ -82,6 +95,12 @@ function MovementSpikeScreen() {
       ) : null}
 
       <Text style={styles.meta}>{message}</Text>
+      <Text style={styles.text}>Scheduled notifications: {scheduled.length}</Text>
+      {scheduled.map((line) => (
+        <Text key={line} style={styles.meta}>
+          {line}
+        </Text>
+      ))}
       {readMs !== null ? <Text style={styles.meta}>7-day read took {readMs} ms</Text> : null}
 
       <View style={styles.row}>

@@ -1,11 +1,16 @@
 export { applyCare, trickLearned } from './care';
 export type { CareAction, CareConfig, CareOutcome, CareState, OwnedToy } from './care';
+export { buildEvent } from './analytics';
+export type { AnalyticsContext, AnalyticsEvent, AnalyticsEventName } from './analytics';
 export { clamp } from './clamp';
 export {
   act,
   adopt,
   advanceToNow,
   currentTrick,
+  DEFAULT_NOTIFY_HOUR,
+  notifyHourOf,
+  setNotifyHour,
   requestGoal,
   setRestMode,
   syncMovement,
@@ -70,3 +75,5 @@ export {
 export type { Clock } from './time';
 export { balance, credit, debit } from './wallet';
 export type { CreditReason, DebitReason, LedgerEntry } from './wallet';
+export { firstWeekRecap, planNotifications } from './retention';
+export type { CopyLine, FirstWeekRecap } from './retention';

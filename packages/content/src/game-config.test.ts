@@ -1,9 +1,9 @@
-import { act, adopt, advanceToNow, syncMovement, view } from '@kithe/core';
+import { act, adopt, advanceToNow, planNotifications, syncMovement, view } from '@kithe/core';
 import { describe, expect, it } from 'vitest';
 
 import { findBannedPhrases } from './bannedPhrases';
 import { breeds, gameConfig } from './core-config';
-import { bannedPhrases } from './parsed';
+import { bannedPhrases, copy } from './parsed';
 
 describe('real content through the game engine', () => {
   it('runs 30 days of play without errors and every diary entry passes the banned list', () => {
@@ -38,6 +38,28 @@ describe('real content through the game engine', () => {
     for (const entry of s.diary) {
       expect(findBannedPhrases(entry.text, bannedPhrases.phrases), entry.text).toEqual([]);
       expect(entry.text).not.toMatch(/[{}]/);
+    }
+  });
+});
+
+describe('daily notifications from real content', () => {
+  it('fills the pup name and passes the banned list for 60 days', () => {
+    const s = adopt(
+      {
+        name: 'Biscuit',
+        breed: breeds[0]!.id,
+        timeZone: 'UTC',
+        nowMs: Date.parse('2026-10-14T12:00:00Z'),
+        seed: 9,
+        startingGoal: { steps: 5000, exerciseMinutes: 30 },
+      },
+      gameConfig,
+    );
+    const plan = planNotifications(s, copy.notifications, s.clock.lastDay, 60);
+    expect(plan[0]!.text).toBe('Biscuit wrote something overnight.');
+    for (const { text } of plan) {
+      expect(text).not.toMatch(/[{}]/);
+      expect(findBannedPhrases(text, bannedPhrases.phrases), text).toEqual([]);
     }
   });
 });

@@ -1,9 +1,11 @@
 import { careConfig, gameConfig, items } from '@kithe/content';
 import { type CareAction, currentTrick, view } from '@kithe/core';
 import { Link, Redirect } from 'expo-router';
-import { useState } from 'react';
+import Storage from 'expo-sqlite/kv-store';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -14,10 +16,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useGame } from '../game/GameProvider';
+import { askForNotifications, rescheduleDaily } from '../notifications/schedule';
 import { Button } from '../ui/Button';
 import { PupArt, type PupPose } from '../ui/PupArt';
 import { colors, radius, space } from '../ui/theme';
 
+const ASKED_KEY = 'kithe.notifications.asked';
 const trickName = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 
 const thanks: Record<CareAction['type'], string> = {
@@ -40,6 +44,22 @@ export default function Home() {
   const [pose, setPose] = useState<PupPose | null>(null);
   const [message, setMessage] = useState('');
   const [shopOpen, setShopOpen] = useState(false);
+  const petName = game?.pet.name;
+
+  // Ask once, after adoption, never before: one cozy note a day.
+  useEffect(() => {
+    if (status !== 'ready' || !petName || Storage.getItemSync(ASKED_KEY)) return;
+    Storage.setItemSync(ASKED_KEY, '1');
+    Alert.alert(`A note from ${petName}`, 'May I send you one cozy note a day?', [
+      { text: 'Not now', style: 'cancel' },
+      {
+        text: 'Yes',
+        onPress: async () => {
+          if ((await askForNotifications()) && game) await rescheduleDaily(game);
+        },
+      },
+    ]);
+  }, [status, petName, game]);
 
   if (status === 'loading') {
     return (
